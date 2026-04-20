@@ -295,8 +295,9 @@ async function runAssessment(){
   try{
     bcData=await fetchBCData(cid);
     ra.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Analyse IA en cours...</span></div>`;
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:buildPrompt(cname,getEnv(),selTypes,bcData)}]})});
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:buildPrompt(cname,getEnv(),selTypes,bcData)})});
     const d=await res.json();
+    if(d.error)throw new Error(d.error);
     lastReport=JSON.parse(d.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
     saveToHistory(lastReport);renderReport(lastReport,bcData);updateEmailPreview(lastReport);
     document.getElementById('sendEmailBtn').disabled=false;
