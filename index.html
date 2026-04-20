@@ -3,127 +3,117 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Assessment ERP — Business Central</title>
+  <title>BC Assessment — Business Central</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #ffffff; --bg2: #f5f5f3; --bg3: #efefec;
-      --text: #1a1a18; --text2: #6b6b67; --text3: #9c9a92;
-      --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.2);
-      --blue: #378ADD; --blue-bg: #E6F1FB; --blue-dark: #0C447C; --blue-mid: #185FA5;
-      --green-bg: #EAF3DE; --green: #3B6D11;
-      --red-bg: #FCEBEB; --red: #A32D2D;
-      --amber-bg: #FAEEDA; --amber: #633806;
-      --radius: 12px; --radius-sm: 8px;
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#ffffff;--bg2:#f5f5f3;--bg3:#efefec;
+      --text:#1a1a18;--text2:#6b6b67;--text3:#9c9a92;
+      --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+      --blue:#378ADD;--blue-bg:#E6F1FB;--blue-dark:#0C447C;--blue-mid:#185FA5;
+      --green-bg:#EAF3DE;--green:#3B6D11;
+      --red-bg:#FCEBEB;--red:#A32D2D;
+      --amber-bg:#FAEEDA;--amber:#633806;
+      --radius:12px;--radius-sm:8px;
+      --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2c;
-        --text: #e8e6df; --text2: #9c9a92; --text3: #6b6b67;
-        --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
-        --blue-bg: #0c2340; --blue-dark: #85B7EB; --blue-mid: #85B7EB;
-        --green-bg: #0f2009; --green: #97C459;
-        --red-bg: #2a0a0a; --red: #F09595;
-        --amber-bg: #2a1800; --amber: #FAC775;
-      }
+    @media(prefers-color-scheme:dark){
+      :root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2c;--text:#e8e6df;--text2:#9c9a92;--text3:#6b6b67;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);--blue-bg:#0c2340;--blue-dark:#85B7EB;--blue-mid:#85B7EB;--green-bg:#0f2009;--green:#97C459;--red-bg:#2a0a0a;--red:#F09595;--amber-bg:#2a1800;--amber:#FAC775}
     }
-    body { font-family: var(--font); background: var(--bg3); color: var(--text); min-height: 100vh; }
-    .page { max-width: 720px; margin: 0 auto; padding: 2rem 1rem 4rem; }
-    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
-    .logo-icon { width: 36px; height: 36px; background: var(--blue); border-radius: 9px; display: flex; align-items: center; justify-content: center; }
-    .logo-icon svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 1.5; stroke-linecap: round; }
-    .logo-text { font-size: 18px; font-weight: 600; color: var(--text); }
-    .logo-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
-    .tabs { display: flex; gap: 4px; background: var(--bg2); padding: 4px; border-radius: 10px; margin-bottom: 1.25rem; border: 0.5px solid var(--border); }
-    .tab { flex: 1; padding: 8px; border: none; background: none; border-radius: 7px; font-size: 13px; cursor: pointer; color: var(--text2); font-weight: 400; transition: all .15s; font-family: var(--font); }
-    .tab.active { background: var(--bg); color: var(--text); font-weight: 500; border: 0.5px solid var(--border); }
-    .panel { display: none; } .panel.active { display: block; }
-    .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
-    .slabel { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .field label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 5px; }
-    input, select { width: 100%; padding: 8px 11px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 13px; font-family: var(--font); outline: none; transition: border-color .15s; }
-    input:focus, select:focus { border-color: var(--blue); }
-    .env-sel { display: flex; gap: 6px; }
-    .env-btn { flex: 1; padding: 8px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: var(--bg); font-size: 12px; cursor: pointer; color: var(--text2); font-family: var(--font); transition: all .15s; }
-    .env-btn.active { border-color: var(--blue); background: var(--blue-bg); color: var(--blue-mid); }
-    .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .type-btn { padding: 10px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); cursor: pointer; font-size: 12px; color: var(--text); text-align: left; transition: all .15s; font-family: var(--font); }
-    .type-btn:hover { background: var(--bg2); }
-    .type-btn.active { border: 1.5px solid var(--blue); background: var(--blue-bg); color: var(--blue-dark); }
-    .type-btn strong { display: block; font-weight: 500; margin-bottom: 2px; }
-    .type-btn span { font-size: 11px; color: var(--text2); }
-    .type-btn.active span { color: var(--blue-mid); }
-    .btn-primary { width: 100%; padding: 12px; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: opacity .15s; }
-    .btn-primary:hover { opacity: .85; } .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
-    .btn-sm { padding: 7px 13px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: var(--bg); font-size: 12px; cursor: pointer; color: var(--text); font-family: var(--font); transition: background .15s; }
-    .btn-sm:hover { background: var(--bg2); } .btn-sm:disabled { opacity: .4; cursor: not-allowed; }
-    .conn-ind { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 7px 11px; border-radius: var(--radius-sm); margin-top: 8px; }
-    .conn-ok { background: var(--green-bg); color: var(--green); }
-    .conn-err { background: var(--red-bg); color: var(--red); }
-    .conn-pending { background: var(--bg2); color: var(--text2); }
-    .dot-s { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .dot-ok { background: #639922; } .dot-err { background: #E24B4A; } .dot-pending { background: #888; }
-    .spinner { width: 15px; height: 15px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; flex-shrink: 0; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .status-bar { display: flex; align-items: center; gap: 9px; padding: 10px 14px; background: var(--bg2); border-radius: var(--radius-sm); margin-bottom: 10px; font-size: 12px; color: var(--text2); }
-    .tag { font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 500; }
-    .tag-crit { background: var(--red-bg); color: var(--red); }
-    .tag-warn { background: var(--amber-bg); color: var(--amber); }
-    .tag-ok { background: var(--green-bg); color: var(--green); }
-    .tag-info { background: var(--blue-bg); color: var(--blue-mid); }
-    .finding-list { list-style: none; }
-    .finding-list li { font-size: 12px; color: var(--text2); padding: 5px 0; border-bottom: 0.5px solid var(--border); display: flex; align-items: flex-start; gap: 7px; line-height: 1.5; }
-    .finding-list li:last-child { border-bottom: none; }
-    .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
-    .dot-red { background: #E24B4A; } .dot-amb { background: #EF9F27; } .dot-grn { background: #639922; } .dot-blu { background: var(--blue); }
-    .metrics { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 8px; }
-    .metric { background: var(--bg2); border-radius: var(--radius-sm); padding: 8px 10px; text-align: center; flex: 1; min-width: 70px; }
-    .metric .val { font-size: 18px; font-weight: 600; color: var(--text); }
-    .metric .lbl { font-size: 10px; color: var(--text2); margin-top: 1px; }
-    .score-badge { font-size: 20px; font-weight: 700; color: var(--blue-dark); background: var(--blue-bg); padding: 5px 12px; border-radius: var(--radius-sm); }
-    .report-hdr { padding: .9rem 1.1rem; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-    .report-title { font-size: 14px; font-weight: 600; color: var(--text); }
-    .report-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
-    .report-body { padding: 1.1rem; }
-    .section-block { margin-bottom: 1.1rem; }
-    .section-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 7px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-    .export-bar { display: flex; gap: 7px; margin-top: 10px; flex-wrap: wrap; }
-    .data-badge { display: inline-flex; align-items: center; font-size: 10px; padding: 2px 7px; border-radius: 99px; background: var(--green-bg); color: var(--green); font-weight: 500; }
-    .hist-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); cursor: pointer; }
-    .hist-item:last-child { border-bottom: none; }
-    .hist-score { width: 44px; height: 44px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; background: var(--blue-bg); }
-    .hist-score span { font-size: 16px; font-weight: 700; color: var(--blue-dark); line-height: 1; }
-    .hist-score small { font-size: 9px; color: var(--blue-mid); }
-    .hist-info { flex: 1; min-width: 0; }
-    .hist-title { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .hist-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
-    .hist-del { font-size: 11px; color: var(--text2); padding: 4px 8px; border: 0.5px solid var(--border); border-radius: 6px; background: none; cursor: pointer; flex-shrink: 0; font-family: var(--font); }
-    .hist-del:hover { background: var(--red-bg); color: var(--red); border-color: #F09595; }
-    .chart-wrap { position: relative; height: 160px; margin: 8px 0; }
-    .sched-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
-    .sched-row:last-child { border-bottom: none; }
-    .sched-freq { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--blue-bg); color: var(--blue-mid); font-weight: 500; flex-shrink: 0; }
-    .sched-next { font-size: 11px; color: var(--text2); flex: 1; }
-    .toggle { position: relative; display: inline-block; width: 30px; height: 17px; flex-shrink: 0; }
-    .toggle input { opacity: 0; width: 0; height: 0; }
-    .tslider { position: absolute; inset: 0; background: var(--border2); border-radius: 17px; transition: .2s; cursor: pointer; }
-    .tslider:before { content: ''; position: absolute; width: 13px; height: 13px; left: 2px; bottom: 2px; background: #fff; border-radius: 50%; transition: .2s; }
-    .toggle input:checked + .tslider { background: var(--blue); }
-    .toggle input:checked + .tslider:before { transform: translateX(13px); }
-    .error-msg { background: var(--red-bg); border: 0.5px solid #F09595; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; color: var(--red); line-height: 1.6; }
-    .empty { text-align: center; padding: 2rem 0; color: var(--text2); font-size: 13px; }
-    .trend-up { color: #639922; font-size: 11px; font-weight: 500; }
-    .trend-dn { color: #E24B4A; font-size: 11px; font-weight: 500; }
-    .email-preview { background: var(--bg2); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; color: var(--text2); line-height: 1.7; margin-top: 8px; }
-    code { font-size: 11px; background: var(--bg2); padding: 1px 5px; border-radius: 4px; font-family: monospace; }
-    .step-guide { display: flex; gap: 10px; margin-bottom: 10px; }
-    .step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--blue-bg); color: var(--blue-mid); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .step-txt { font-size: 12px; color: var(--text2); line-height: 1.6; }
-    @media (max-width: 500px) { .grid2 { grid-template-columns: 1fr; } .type-grid { grid-template-columns: 1fr; } }
+    body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:100vh}
+    .page{max-width:720px;margin:0 auto;padding:2rem 1rem 4rem}
+    .logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+    .logo-icon{width:36px;height:36px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center}
+    .logo-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round}
+    .logo-text{font-size:18px;font-weight:600;color:var(--text)}
+    .logo-sub{font-size:12px;color:var(--text2);margin-top:1px}
+    .tabs{display:flex;gap:4px;background:var(--bg2);padding:4px;border-radius:10px;margin-bottom:1.25rem;border:0.5px solid var(--border)}
+    .tab{flex:1;padding:8px;border:none;background:none;border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);font-weight:400;transition:all .15s;font-family:var(--font)}
+    .tab.active{background:var(--bg);color:var(--text);font-weight:500;border:0.5px solid var(--border)}
+    .panel{display:none}.panel.active{display:block}
+    .card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+    .slabel{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .field label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
+    input,select{width:100%;padding:8px 11px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color .15s}
+    input:focus,select:focus{border-color:var(--blue)}
+    .env-sel{display:flex;gap:6px}
+    .env-btn{flex:1;padding:8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all .15s}
+    .env-btn.active{border-color:var(--blue);background:var(--blue-bg);color:var(--blue-mid)}
+    .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .type-btn{padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;font-size:12px;color:var(--text);text-align:left;transition:all .15s;font-family:var(--font)}
+    .type-btn:hover{background:var(--bg2)}
+    .type-btn.active{border:1.5px solid var(--blue);background:var(--blue-bg);color:var(--blue-dark)}
+    .type-btn strong{display:block;font-weight:500;margin-bottom:2px}
+    .type-btn span{font-size:11px;color:var(--text2)}
+    .type-btn.active span{color:var(--blue-mid)}
+    .btn-primary{width:100%;padding:12px;background:var(--text);color:var(--bg);border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+    .btn-primary:hover{opacity:.85}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+    .btn-sm{padding:7px 13px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;cursor:pointer;color:var(--text);font-family:var(--font);transition:background .15s}
+    .btn-sm:hover{background:var(--bg2)}.btn-sm:disabled{opacity:.4;cursor:not-allowed}
+    .conn-ind{display:flex;align-items:center;gap:8px;font-size:12px;padding:7px 11px;border-radius:var(--radius-sm);margin-top:8px}
+    .conn-ok{background:var(--green-bg);color:var(--green)}
+    .conn-err{background:var(--red-bg);color:var(--red)}
+    .conn-pending{background:var(--bg2);color:var(--text2)}
+    .dot-s{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .dot-ok{background:#639922}.dot-err{background:#E24B4A}.dot-pending{background:#888}
+    .spinner{width:15px;height:15px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .status-bar{display:flex;align-items:center;gap:9px;padding:10px 14px;background:var(--bg2);border-radius:var(--radius-sm);margin-bottom:10px;font-size:12px;color:var(--text2)}
+    .tag{font-size:11px;padding:2px 7px;border-radius:99px;font-weight:500}
+    .tag-crit{background:var(--red-bg);color:var(--red)}
+    .tag-warn{background:var(--amber-bg);color:var(--amber)}
+    .tag-ok{background:var(--green-bg);color:var(--green)}
+    .tag-info{background:var(--blue-bg);color:var(--blue-mid)}
+    .finding-list{list-style:none}
+    .finding-list li{font-size:12px;color:var(--text2);padding:5px 0;border-bottom:0.5px solid var(--border);display:flex;align-items:flex-start;gap:7px;line-height:1.5}
+    .finding-list li:last-child{border-bottom:none}
+    .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:5px}
+    .dot-red{background:#E24B4A}.dot-amb{background:#EF9F27}.dot-grn{background:#639922}.dot-blu{background:var(--blue)}
+    .metrics{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+    .metric{background:var(--bg2);border-radius:var(--radius-sm);padding:8px 10px;text-align:center;flex:1;min-width:70px}
+    .metric .val{font-size:18px;font-weight:600;color:var(--text)}
+    .metric .lbl{font-size:10px;color:var(--text2);margin-top:1px}
+    .score-badge{font-size:20px;font-weight:700;color:var(--blue-dark);background:var(--blue-bg);padding:5px 12px;border-radius:var(--radius-sm)}
+    .report-hdr{padding:.9rem 1.1rem;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .report-title{font-size:14px;font-weight:600;color:var(--text)}
+    .report-meta{font-size:11px;color:var(--text2);margin-top:2px}
+    .report-body{padding:1.1rem}
+    .section-block{margin-bottom:1.1rem}
+    .section-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:7px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+    .export-bar{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+    .data-badge{display:inline-flex;align-items:center;font-size:10px;padding:2px 7px;border-radius:99px;background:var(--green-bg);color:var(--green);font-weight:500}
+    .hist-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border);cursor:pointer}
+    .hist-item:last-child{border-bottom:none}
+    .hist-score{width:44px;height:44px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:var(--blue-bg)}
+    .hist-score span{font-size:16px;font-weight:700;color:var(--blue-dark);line-height:1}
+    .hist-score small{font-size:9px;color:var(--blue-mid)}
+    .hist-info{flex:1;min-width:0}
+    .hist-title{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .hist-meta{font-size:11px;color:var(--text2);margin-top:2px}
+    .hist-del{font-size:11px;color:var(--text2);padding:4px 8px;border:0.5px solid var(--border);border-radius:6px;background:none;cursor:pointer;font-family:var(--font)}
+    .hist-del:hover{background:var(--red-bg);color:var(--red);border-color:#F09595}
+    .chart-wrap{position:relative;height:160px;margin:8px 0}
+    .sched-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)}
+    .sched-row:last-child{border-bottom:none}
+    .sched-freq{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--blue-bg);color:var(--blue-mid);font-weight:500;flex-shrink:0}
+    .sched-next{font-size:11px;color:var(--text2);flex:1}
+    .toggle{position:relative;display:inline-block;width:30px;height:17px;flex-shrink:0}
+    .toggle input{opacity:0;width:0;height:0}
+    .tslider{position:absolute;inset:0;background:var(--border2);border-radius:17px;transition:.2s;cursor:pointer}
+    .tslider:before{content:'';position:absolute;width:13px;height:13px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:.2s}
+    .toggle input:checked+.tslider{background:var(--blue)}
+    .toggle input:checked+.tslider:before{transform:translateX(13px)}
+    .error-msg{background:var(--red-bg);border:0.5px solid #F09595;border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--red);line-height:1.6}
+    .empty{text-align:center;padding:2rem 0;color:var(--text2);font-size:13px}
+    .trend-up{color:#639922;font-size:11px;font-weight:500}
+    .trend-dn{color:#E24B4A;font-size:11px;font-weight:500}
+    .email-preview{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--text2);line-height:1.7;margin-top:8px}
+    code{font-size:11px;background:var(--bg2);padding:1px 5px;border-radius:4px;font-family:monospace}
+    .info-box{background:var(--blue-bg);border:0.5px solid #B5D4F4;border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--blue-dark);margin-top:8px;line-height:1.6}
+    @media(max-width:500px){.grid2{grid-template-columns:1fr}.type-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -145,15 +135,15 @@
     <button class="tab" onclick="switchTab('email')">Email</button>
   </div>
 
-  <!-- ASSESSMENT TAB -->
   <div id="tab-assess" class="panel active">
     <div class="card">
       <div class="slabel">Connexion Business Central</div>
-      <div class="grid2" style="margin-bottom:10px">
-        <div class="field"><label>Tenant ID</label><input type="text" id="tenantId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx" oninput="resetConn()"/></div>
-        <div class="field"><label>Client ID</label><input type="text" id="clientId" placeholder="App registration ID" oninput="resetConn()"/></div>
+      <div class="info-box">Saisissez uniquement les identifiants (GUID), pas les URLs complètes.</div>
+      <div class="grid2" style="margin-bottom:10px;margin-top:10px">
+        <div class="field"><label>Tenant ID <span style="color:var(--text3)">(GUID uniquement)</span></label><input type="text" id="tenantId" placeholder="24c585fa-e1f5-4890-88d2-..." oninput="resetConn()"/></div>
+        <div class="field"><label>Client ID</label><input type="text" id="clientId" placeholder="77ec1905-016d-4492-..." oninput="resetConn()"/></div>
       </div>
-      <div class="field" style="margin-bottom:10px"><label>Client Secret</label><input type="password" id="clientSecret" placeholder="••••••••••••" oninput="resetConn()"/></div>
+      <div class="field" style="margin-bottom:10px"><label>Client Secret</label><input type="password" id="clientSecret" placeholder="Valeur du secret (pas l'ID)" oninput="resetConn()"/></div>
       <div class="field"><label>Environnement</label>
         <div class="env-sel">
           <button class="env-btn active" onclick="selectEnv(this,'production')">Production</button>
@@ -177,7 +167,6 @@
     <div id="resultArea" style="margin-top:1rem"></div>
   </div>
 
-  <!-- DASHBOARD TAB -->
   <div id="tab-dashboard" class="panel">
     <div class="card">
       <div class="slabel">Évolution du score global</div>
@@ -188,35 +177,32 @@
         <div class="slabel" style="margin:0">Historique des assessments</div>
         <button class="btn-sm" style="font-size:11px;color:var(--red);border-color:#F09595" onclick="clearHistory()">Tout effacer</button>
       </div>
-      <div id="histList"><div class="empty">Aucun assessment enregistré.<br>Lancez votre premier assessment dans l'onglet Assessment.</div></div>
+      <div id="histList"><div class="empty">Aucun assessment enregistré.</div></div>
     </div>
   </div>
 
-  <!-- SCHEDULE TAB -->
   <div id="tab-schedule" class="panel">
     <div class="card">
       <div class="slabel">Planification automatique</div>
-      <div id="schedList">
-        <div class="sched-row">
-          <label class="toggle"><input type="checkbox" id="sched-monthly" onchange="saveSched()"><span class="tslider"></span></label>
-          <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Mensuel</div><div class="sched-next" id="next-monthly">Désactivé</div></div>
-          <span class="sched-freq">1er du mois</span>
-        </div>
-        <div class="sched-row">
-          <label class="toggle"><input type="checkbox" id="sched-quarterly" onchange="saveSched()"><span class="tslider"></span></label>
-          <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Trimestriel</div><div class="sched-next" id="next-quarterly">Désactivé</div></div>
-          <span class="sched-freq">Tous les 3 mois</span>
-        </div>
-        <div class="sched-row">
-          <label class="toggle"><input type="checkbox" id="sched-weekly" onchange="saveSched()"><span class="tslider"></span></label>
-          <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Hebdomadaire</div><div class="sched-next" id="next-weekly">Désactivé</div></div>
-          <span class="sched-freq">Chaque lundi</span>
-        </div>
+      <div class="sched-row">
+        <label class="toggle"><input type="checkbox" id="sched-monthly" onchange="saveSched()"><span class="tslider"></span></label>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Mensuel</div><div class="sched-next" id="next-monthly">Désactivé</div></div>
+        <span class="sched-freq">1er du mois</span>
+      </div>
+      <div class="sched-row">
+        <label class="toggle"><input type="checkbox" id="sched-quarterly" onchange="saveSched()"><span class="tslider"></span></label>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Trimestriel</div><div class="sched-next" id="next-quarterly">Désactivé</div></div>
+        <span class="sched-freq">Tous les 3 mois</span>
+      </div>
+      <div class="sched-row">
+        <label class="toggle"><input type="checkbox" id="sched-weekly" onchange="saveSched()"><span class="tslider"></span></label>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Hebdomadaire</div><div class="sched-next" id="next-weekly">Désactivé</div></div>
+        <span class="sched-freq">Chaque lundi</span>
       </div>
     </div>
     <div class="card">
       <div class="slabel">Destinataires & société</div>
-      <div class="field" style="margin-bottom:10px"><label>Adresses email (séparées par virgules)</label><input type="text" id="sched-emails" placeholder="cfo@societe.com, dsi@societe.com" oninput="saveSched()"/></div>
+      <div class="field" style="margin-bottom:10px"><label>Adresses email</label><input type="text" id="sched-emails" placeholder="cfo@societe.com, dsi@societe.com" oninput="saveSched()"/></div>
       <div class="field"><label>Société à analyser</label><input type="text" id="sched-company" placeholder="Nom de la société BC" oninput="saveSched()"/></div>
       <div id="sched-status" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
     </div>
@@ -226,7 +212,6 @@
     </div>
   </div>
 
-  <!-- EMAIL TAB -->
   <div id="tab-email" class="panel">
     <div class="card">
       <div class="slabel">Envoi via Microsoft 365 / Graph API</div>
@@ -242,19 +227,13 @@
       <div class="slabel">Aperçu de l'email</div>
       <div class="email-preview" id="emailPreview">L'aperçu apparaîtra après la génération d'un assessment.</div>
     </div>
-    <div class="card">
-      <div class="slabel">Configuration requise dans Azure AD</div>
-      <div class="step-guide"><div class="step-num">1</div><div class="step-txt">App registrations → API permissions → Microsoft Graph → ajouter <code>Mail.Send</code> (Application permission)</div></div>
-      <div class="step-guide"><div class="step-num">2</div><div class="step-txt">Cliquer <strong>Grant admin consent</strong> pour votre tenant</div></div>
-      <div class="step-guide" style="margin:0"><div class="step-num">3</div><div class="step-txt">Endpoint utilisé : <code>POST https://graph.microsoft.com/v1.0/users/{sender}/sendMail</code></div></div>
-    </div>
   </div>
 </div>
 
 <script>
-const STORAGE_KEY='bc_assessment_history',SCHED_KEY='bc_assessment_schedule';
-let selectedEnv='production',selectedTypes=new Set(['audit','performance','compliance','recommendations']);
-let accessToken=null,bcData=null,lastReport=null,chart=null;
+const SK='bc_assessment_history',SCHK='bc_assessment_schedule';
+let selEnv='production',selTypes=new Set(['audit','performance','compliance','recommendations']);
+let token=null,bcData=null,lastReport=null,chart=null;
 
 function switchTab(n){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['assess','dashboard','schedule','email'][i]===n));
@@ -263,33 +242,39 @@ function switchTab(n){
   if(n==='dashboard')renderDashboard();
   if(n==='schedule')renderSchedule();
 }
-function selectEnv(btn,env){selectedEnv=env;document.querySelectorAll('.env-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');resetConn()}
-function toggleType(btn){const t=btn.dataset.type;if(selectedTypes.has(t)){if(selectedTypes.size>1){selectedTypes.delete(t);btn.classList.remove('active')}}else{selectedTypes.add(t);btn.classList.add('active')}}
-function resetConn(){accessToken=null;bcData=null;setCS('pending','Entrez vos identifiants');document.getElementById('company-select').style.display='none'}
+function selectEnv(btn,env){selEnv=env;document.querySelectorAll('.env-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');resetConn()}
+function toggleType(btn){const t=btn.dataset.type;if(selTypes.has(t)){if(selTypes.size>1){selTypes.delete(t);btn.classList.remove('active')}}else{selTypes.add(t);btn.classList.add('active')}}
+function resetConn(){token=null;bcData=null;setCS('pending','Entrez vos identifiants');document.getElementById('company-select').style.display='none'}
 function setCS(s,m){const el=document.getElementById('conn-status');el.className='conn-ind conn-'+s;el.innerHTML=`<span class="dot-s dot-${s}"></span><span>${m}</span>`}
 
-async function getToken(){
-  const tid=document.getElementById('tenantId').value.trim(),cid=document.getElementById('clientId').value.trim(),sec=document.getElementById('clientSecret').value.trim();
+function getTID(){return document.getElementById('tenantId').value.trim().replace(/^https?:\/\/[^/]+\//,'').replace(/^[^/]*\//,'').split('/')[0].trim()}
+function getCID(){return document.getElementById('clientId').value.trim()}
+function getSEC(){return document.getElementById('clientSecret').value.trim()}
+
+async function getToken(scope){
+  const tid=getTID(),cid=getCID(),sec=getSEC();
   if(!tid||!cid||!sec)throw new Error('Remplissez Tenant ID, Client ID et Secret');
-  const r=await fetch(`https://login.microsoftonline.com/${tid}/oauth2/v2.0/token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'client_credentials',client_id:cid,client_secret:sec,scope:'https://api.businesscentral.dynamics.com/.default'})});
-  const d=await r.json();if(d.error)throw new Error(d.error_description||d.error);return d.access_token;
+  const r=await fetch('/api/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenantId:tid,clientId:cid,clientSecret:sec,scope:scope||'https://api.businesscentral.dynamics.com/.default'})});
+  const d=await r.json();if(d.error)throw new Error(d.error);return d.access_token;
 }
 async function bcGet(path){
-  const tid=document.getElementById('tenantId').value.trim();
-  const r=await fetch(`https://api.businesscentral.dynamics.com/v2.0/${tid}/${selectedEnv}${path}`,{headers:{Authorization:`Bearer ${accessToken}`,Accept:'application/json'}});
-  if(!r.ok)throw new Error('BC API '+r.status);return r.json();
+  const tid=getTID();
+  const url=`https://api.businesscentral.dynamics.com/v2.0/${tid}/${selEnv}${path}`;
+  const r=await fetch('/api/bc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,token})});
+  const d=await r.json();if(d.error)throw new Error(d.error);return d;
 }
 async function testConnection(){
   const btn=document.querySelector('#tab-assess .btn-sm');btn.disabled=true;btn.textContent='Connexion...';
   setCS('pending','Authentification OAuth2...');
   try{
-    accessToken=await getToken();setCS('pending','Récupération des sociétés...');
-    const d=await bcGet('/api/v2.0/companies');const cos=d.value||[];
-    if(!cos.length)throw new Error('Aucune société trouvée');
+    token=await getToken();
+    setCS('pending','Récupération des sociétés...');
+    const d=await bcGet('/api/v2.0/companies');
+    const cos=d.value||[];if(!cos.length)throw new Error('Aucune société trouvée');
     const sel=document.getElementById('company-select');
     sel.innerHTML='<option value="">Choisir une société...</option>'+cos.map(c=>`<option value="${c.id}">${c.displayName}</option>`).join('');
     sel.style.display='block';setCS('ok',`Connecté — ${cos.length} société(s)`);
-  }catch(e){setCS('err',e.message);accessToken=null}
+  }catch(e){setCS('err',e.message);token=null}
   btn.disabled=false;btn.textContent='Tester la connexion →';
 }
 async function fetchBCData(cid){
@@ -306,13 +291,13 @@ async function runAssessment(){
   const sel=document.getElementById('company-select');
   const cid=sel.value,cname=sel.options[sel.selectedIndex]?.text||'Société BC';
   btn.disabled=true;
-  if(!accessToken){ra.innerHTML=`<div class="error-msg">Testez d'abord la connexion BC.</div>`;btn.disabled=false;return}
+  if(!token){ra.innerHTML=`<div class="error-msg">Testez d'abord la connexion BC.</div>`;btn.disabled=false;return}
   if(!cid){ra.innerHTML=`<div class="error-msg">Sélectionnez une société.</div>`;btn.disabled=false;return}
   ra.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Collecte des données BC...</span></div>`;
   try{
     bcData=await fetchBCData(cid);
     ra.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Analyse IA en cours...</span></div>`;
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:buildPrompt(cname,selectedEnv,selectedTypes,bcData)}]})});
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:buildPrompt(cname,selEnv,selTypes,bcData)}]})});
     const d=await res.json();
     lastReport=JSON.parse(d.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
     saveToHistory(lastReport);renderReport(lastReport,bcData);updateEmailPreview(lastReport);
@@ -324,7 +309,7 @@ function nTag(n){const m={critique:'tag-crit',attention:'tag-warn',bon:'tag-ok',
 function dClass(g){return{critique:'dot-red',attention:'dot-amb',info:'dot-blu',ok:'dot-grn'}[g]||'dot-blu'}
 function renderReport(r,data){
   const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  const secs=(r.sections||[]).filter(s=>selectedTypes.has(s.id)).map(s=>`<div class="section-block"><div class="section-title">${s.titre} ${nTag(s.niveau)}<span style="margin-left:auto;font-size:11px;color:var(--text2)">Score: <b style="color:var(--text)">${s.score}/100</b></span></div><ul class="finding-list">${(s.findings||[]).map(f=>`<li><span class="dot ${dClass(f.gravite)}"></span>${f.texte}</li>`).join('')}</ul></div>`).join('');
+  const secs=(r.sections||[]).filter(s=>selTypes.has(s.id)).map(s=>`<div class="section-block"><div class="section-title">${s.titre} ${nTag(s.niveau)}<span style="margin-left:auto;font-size:11px;color:var(--text2)">Score: <b style="color:var(--text)">${s.score}/100</b></span></div><ul class="finding-list">${(s.findings||[]).map(f=>`<li><span class="dot ${dClass(f.gravite)}"></span>${f.texte}</li>`).join('')}</ul></div>`).join('');
   document.getElementById('resultArea').innerHTML=`
     <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:8px">
       <div class="report-hdr"><div><div class="report-title">${r.societe} ${r.donnees_reelles?'<span class="data-badge">Données réelles BC</span>':''}</div><div class="report-meta">${r.environnement} · ${now}</div></div><div class="score-badge">${r.score_global}/100</div></div>
@@ -340,14 +325,9 @@ function renderReport(r,data){
       <button class="btn-sm" onclick="switchTab('dashboard')">Voir le dashboard →</button>
     </div>`;
 }
-function saveToHistory(r){
-  const h=getHistory();
-  h.unshift({id:Date.now(),date:new Date().toISOString(),score:r.score_global,societe:r.societe,environnement:r.environnement,synthese:r.synthese,sections:r.sections,metrics:r.metrics});
-  if(h.length>20)h.pop();
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(h))}catch{}
-}
-function getHistory(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch{return[]}}
-function clearHistory(){if(confirm('Effacer tout l\'historique ?')){localStorage.removeItem(STORAGE_KEY);renderDashboard()}}
+function saveToHistory(r){const h=getHistory();h.unshift({id:Date.now(),date:new Date().toISOString(),score:r.score_global,societe:r.societe,environnement:r.environnement,synthese:r.synthese,sections:r.sections,metrics:r.metrics});if(h.length>20)h.pop();try{localStorage.setItem(SK,JSON.stringify(h))}catch{}}
+function getHistory(){try{return JSON.parse(localStorage.getItem(SK)||'[]')}catch{return[]}}
+function clearHistory(){if(confirm('Effacer tout l\'historique ?')){localStorage.removeItem(SK);renderDashboard()}}
 function renderDashboard(){
   const h=getHistory();
   if(!h.length){document.getElementById('histList').innerHTML='<div class="empty">Aucun assessment enregistré.</div>';if(chart){chart.destroy();chart=null}return}
@@ -355,30 +335,14 @@ function renderDashboard(){
   if(chart)chart.destroy();
   const ctx=document.getElementById('scoreChart').getContext('2d');
   chart=new Chart(ctx,{type:'line',data:{labels:sorted.map(x=>new Date(x.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})),datasets:[{label:'Score',data:sorted.map(x=>x.score),borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',borderWidth:2,pointBackgroundColor:'#378ADD',pointRadius:4,tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{font:{size:11},stepSize:25},grid:{color:'rgba(128,128,128,0.08)'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
-  document.getElementById('histList').innerHTML=h.map((x,i)=>{
-    const prev=h[i+1];const trend=prev?x.score-prev.score:null;
-    const th=trend===null?'':(trend>0?`<span class="trend-up">+${trend}</span>`:trend<0?`<span class="trend-dn">${trend}</span>`:'');
-    return `<div class="hist-item" onclick="loadHist(${x.id})"><div class="hist-score"><span>${x.score}</span><small>/100</small></div><div class="hist-info"><div class="hist-title">${x.societe}</div><div class="hist-meta">${new Date(x.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})} · ${x.environnement} ${th}</div></div><button class="hist-del" onclick="event.stopPropagation();delHist(${x.id})">Suppr.</button></div>`;
-  }).join('');
+  document.getElementById('histList').innerHTML=h.map((x,i)=>{const prev=h[i+1];const trend=prev?x.score-prev.score:null;const th=trend===null?'':(trend>0?`<span class="trend-up">+${trend}</span>`:trend<0?`<span class="trend-dn">${trend}</span>`:'');return `<div class="hist-item" onclick="loadHist(${x.id})"><div class="hist-score"><span>${x.score}</span><small>/100</small></div><div class="hist-info"><div class="hist-title">${x.societe}</div><div class="hist-meta">${new Date(x.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})} · ${x.environnement} ${th}</div></div><button class="hist-del" onclick="event.stopPropagation();delHist(${x.id})">Suppr.</button></div>`;}).join('');
 }
 function loadHist(id){const h=getHistory().find(x=>x.id===id);if(!h)return;lastReport=h;bcData=null;renderReport(h,null);switchTab('assess')}
-function delHist(id){const h=getHistory().filter(x=>x.id!==id);try{localStorage.setItem(STORAGE_KEY,JSON.stringify(h))}catch{}renderDashboard()}
-function saveSched(){
-  const s={monthly:document.getElementById('sched-monthly').checked,quarterly:document.getElementById('sched-quarterly').checked,weekly:document.getElementById('sched-weekly').checked,emails:document.getElementById('sched-emails').value,company:document.getElementById('sched-company').value};
-  try{localStorage.setItem(SCHED_KEY,JSON.stringify(s))}catch{}renderSchedule();
-}
-function loadSched(){
-  try{const s=JSON.parse(localStorage.getItem(SCHED_KEY)||'{}');
-    if(s.monthly)document.getElementById('sched-monthly').checked=true;
-    if(s.quarterly)document.getElementById('sched-quarterly').checked=true;
-    if(s.weekly)document.getElementById('sched-weekly').checked=true;
-    if(s.emails)document.getElementById('sched-emails').value=s.emails;
-    if(s.company)document.getElementById('sched-company').value=s.company;
-  }catch{}
-}
+function delHist(id){const h=getHistory().filter(x=>x.id!==id);try{localStorage.setItem(SK,JSON.stringify(h))}catch{}renderDashboard()}
+function saveSched(){const s={monthly:document.getElementById('sched-monthly').checked,quarterly:document.getElementById('sched-quarterly').checked,weekly:document.getElementById('sched-weekly').checked,emails:document.getElementById('sched-emails').value,company:document.getElementById('sched-company').value};try{localStorage.setItem(SCHK,JSON.stringify(s))}catch{}renderSchedule()}
+function loadSched(){try{const s=JSON.parse(localStorage.getItem(SCHK)||'{}');if(s.monthly)document.getElementById('sched-monthly').checked=true;if(s.quarterly)document.getElementById('sched-quarterly').checked=true;if(s.weekly)document.getElementById('sched-weekly').checked=true;if(s.emails)document.getElementById('sched-emails').value=s.emails;if(s.company)document.getElementById('sched-company').value=s.company;}catch{}}
 function renderSchedule(){
-  const now=new Date();
-  const fmt=d=>d.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const now=new Date(),fmt=d=>d.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
   function nm(){const d=new Date(now);d.setMonth(d.getMonth()+1);d.setDate(1);return d}
   function nq(){const m=Math.ceil((now.getMonth()+1)/3)*3;const d=new Date(now.getFullYear(),m,1);if(d<=now)d.setMonth(d.getMonth()+3);return d}
   function nw(){const d=new Date(now);const diff=(8-d.getDay())%7||7;d.setDate(d.getDate()+diff);return d}
@@ -386,31 +350,25 @@ function renderSchedule(){
   document.getElementById('next-monthly').textContent=mo?`Prochain : ${fmt(nm())}`:'Désactivé';
   document.getElementById('next-quarterly').textContent=qu?`Prochain : ${fmt(nq())}`:'Désactivé';
   document.getElementById('next-weekly').textContent=we?`Prochain : ${fmt(nw())}`:'Désactivé';
-  const active=[];
-  if(mo)active.push({freq:'Mensuel',date:nm()});if(qu)active.push({freq:'Trimestriel',date:nq()});if(we)active.push({freq:'Hebdomadaire',date:nw()});
-  active.sort((a,b)=>a.date-b.date);
+  const active=[];if(mo)active.push({freq:'Mensuel',date:nm()});if(qu)active.push({freq:'Trimestriel',date:nq()});if(we)active.push({freq:'Hebdomadaire',date:nw()});active.sort((a,b)=>a.date-b.date);
   document.getElementById('pendingList').innerHTML=active.length?active.map(a=>`<div class="sched-row"><span class="sched-freq">${a.freq}</span><span class="sched-next">Prochain : ${fmt(a.date)}</span></div>`).join(''):'<div class="empty" style="padding:1rem 0">Aucune planification active.</div>';
-  document.getElementById('sched-status').textContent=active.length?`${active.length} planification(s) active(s)${document.getElementById('sched-emails').value?` · ${document.getElementById('sched-emails').value.split(',').length} destinataire(s)`:''}`:''
+  document.getElementById('sched-status').textContent=active.length?`${active.length} planification(s) active(s)`:''
 }
-function updateEmailPreview(r){
-  if(!r)return;
-  const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-  document.getElementById('emailPreview').innerHTML=`<strong>${document.getElementById('emailSubject').value}</strong><br><br>Bonjour,<br><br>Veuillez trouver ci-joint le rapport d'assessment ERP Business Central pour <strong>${r.societe}</strong> généré le ${now}.<br><br>Score global : <strong>${r.score_global}/100</strong><br>${r.synthese}<br><br>Cordialement,<br>Système d'assessment ERP automatique`;
-}
+function updateEmailPreview(r){if(!r)return;const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});document.getElementById('emailPreview').innerHTML=`<strong>${document.getElementById('emailSubject').value}</strong><br><br>Bonjour,<br><br>Rapport d'assessment ERP BC pour <strong>${r.societe}</strong> — ${now}.<br>Score global : <strong>${r.score_global}/100</strong><br>${r.synthese}`}
 async function sendEmail(){
   const btn=document.getElementById('sendEmailBtn'),statusEl=document.getElementById('emailStatus');
-  const tid=document.getElementById('tenantId').value.trim(),cid=document.getElementById('graphClientId').value.trim()||document.getElementById('clientId').value.trim(),sec=document.getElementById('clientSecret').value.trim();
+  const tid=getTID(),cid=document.getElementById('graphClientId').value.trim()||getCID(),sec=getSEC();
   const sender=document.getElementById('senderEmail').value.trim(),recipients=document.getElementById('recipientEmails').value.trim(),subject=document.getElementById('emailSubject').value.trim();
   if(!lastReport){statusEl.innerHTML=`<div class="error-msg">Générez d'abord un rapport.</div>`;return}
   if(!sender||!recipients){statusEl.innerHTML=`<div class="error-msg">Remplissez expéditeur et destinataires.</div>`;return}
   btn.disabled=true;btn.textContent='Envoi...';
-  statusEl.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Obtention du token Graph...</span></div>`;
+  statusEl.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Envoi via Graph API...</span></div>`;
   try{
-    const tr=await fetch(`https://login.microsoftonline.com/${tid}/oauth2/v2.0/token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'client_credentials',client_id:cid,client_secret:sec,scope:'https://graph.microsoft.com/.default'})});
-    const td=await tr.json();if(td.error)throw new Error(td.error_description||td.error);
+    const r=await fetch('/api/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenantId:tid,clientId:cid,clientSecret:sec,scope:'https://graph.microsoft.com/.default'})});
+    const td=await r.json();if(td.error)throw new Error(td.error);
     const toList=recipients.split(',').map(e=>({emailAddress:{address:e.trim()}}));
     const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-    const body=`<html><body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto"><div style="background:#185FA5;padding:20px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:18px">Rapport d'assessment ERP BC</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px">${now}</p></div><div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px"><div style="background:#EFF6FF;border-radius:8px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:14px"><div style="font-size:28px;font-weight:700;color:#185FA5">${lastReport.score_global}<span style="font-size:13px;color:#6B7280">/100</span></div><div><div style="font-weight:600">${lastReport.societe}</div><div style="color:#6B7280;font-size:12px">${lastReport.environnement}</div></div></div><p style="line-height:1.7;font-size:13px">${lastReport.synthese}</p>${(lastReport.sections||[]).map(s=>`<div style="margin-top:14px"><h3 style="font-size:13px;font-weight:600;margin:0 0 7px">${s.titre} — Score: ${s.score}/100</h3>${(s.findings||[]).map(f=>`<div style="font-size:12px;color:#4B5563;padding:3px 0 3px 10px;border-left:3px solid ${f.gravite==='critique'?'#EF4444':f.gravite==='attention'?'#F59E0B':'#3B82F6'};margin-bottom:3px">${f.texte}</div>`).join('')}</div>`).join('')}<p style="margin-top:16px;font-size:11px;color:#9CA3AF;border-top:1px solid #e5e7eb;padding-top:10px">Rapport généré automatiquement — BC Assessment App</p></div></body></html>`;
+    const body=`<html><body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto"><div style="background:#185FA5;padding:20px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:18px">Rapport Assessment ERP BC</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px">${now}</p></div><div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px"><div style="background:#EFF6FF;border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:28px;font-weight:700;color:#185FA5">${lastReport.score_global}<span style="font-size:13px;color:#6B7280">/100</span></div><div style="font-weight:600">${lastReport.societe}</div></div><p style="line-height:1.7;font-size:13px">${lastReport.synthese}</p>${(lastReport.sections||[]).map(s=>`<div style="margin-top:14px"><h3 style="font-size:13px;font-weight:600;margin:0 0 7px">${s.titre} — ${s.score}/100</h3>${(s.findings||[]).map(f=>`<div style="font-size:12px;color:#4B5563;padding:3px 0 3px 10px;border-left:3px solid ${f.gravite==='critique'?'#EF4444':f.gravite==='attention'?'#F59E0B':'#3B82F6'};margin-bottom:3px">${f.texte}</div>`).join('')}</div>`).join('')}</div></body></html>`;
     const mr=await fetch(`https://graph.microsoft.com/v1.0/users/${sender}/sendMail`,{method:'POST',headers:{Authorization:`Bearer ${td.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({message:{subject,body:{contentType:'HTML',content:body},toRecipients:toList},saveToSentItems:true})});
     if(!mr.ok){const e=await mr.json();throw new Error(e.error?.message||'Graph API '+mr.status)}
     statusEl.innerHTML=`<div style="background:var(--green-bg);border:0.5px solid #C0DD97;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--green)">Email envoyé à ${toList.length} destinataire(s) !</div>`;
@@ -432,10 +390,8 @@ function exportPDF(){
     doc.setFillColor(245,247,250);doc.rect(M,y,CW,18,'F');
     doc.setTextColor(60,60,60);doc.setFontSize(11);doc.setFont('helvetica','bold');doc.text(lastReport.societe,M+4,y+7);
     doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,100,100);doc.text(`Environnement : ${lastReport.environnement}`,M+4,y+14);y+=24;
-    doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);doc.text('Synthèse executive',M,y);y+=5;
-    doc.setDrawColor(220,220,220);doc.setLineWidth(.3);doc.line(M,y,W-M,y);y+=5;
-    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(70,70,70);
-    const sl=doc.splitTextToSize(lastReport.synthese,CW);doc.text(sl,M,y);y+=sl.length*4.5+8;
+    const sl=doc.splitTextToSize(lastReport.synthese,CW);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(70,70,70);doc.text(sl,M,y);y+=sl.length*4.5+8;
     const gc={critique:[163,45,45],attention:[133,79,11],bon:[24,95,165],excellent:[59,109,17]};
     const fc={critique:[226,75,74],attention:[239,159,39],info:[55,138,221],ok:[99,153,34]};
     (lastReport.sections||[]).forEach(s=>{
