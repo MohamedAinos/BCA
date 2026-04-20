@@ -144,11 +144,8 @@
         <div class="field"><label>Client ID</label><input type="text" id="clientId" placeholder="77ec1905-016d-4492-..." oninput="resetConn()"/></div>
       </div>
       <div class="field" style="margin-bottom:10px"><label>Client Secret</label><input type="password" id="clientSecret" placeholder="Valeur du secret (pas l'ID)" oninput="resetConn()"/></div>
-      <div class="field"><label>Environnement</label>
-        <div class="env-sel">
-          <button class="env-btn active" onclick="selectEnv(this,'production')">Production</button>
-          <button class="env-btn" onclick="selectEnv(this,'sandbox')">Sandbox</button>
-        </div>
+      <div class="field"><label>Nom de l'environnement <span style="color:var(--text3)">(ex: CXD_FRANCE_TEST)</span></label>
+        <input type="text" id="envName" placeholder="production" value="production" oninput="resetConn()"/>
       </div>
       <button class="btn-sm" style="margin-top:8px" onclick="testConnection()">Tester la connexion →</button>
       <div id="conn-status" class="conn-ind conn-pending"><span class="dot-s dot-pending"></span><span>Entrez vos identifiants</span></div>
@@ -232,7 +229,7 @@
 
 <script>
 const SK='bc_assessment_history',SCHK='bc_assessment_schedule';
-let selEnv='production',selTypes=new Set(['audit','performance','compliance','recommendations']);
+let selTypes=new Set(['audit','performance','compliance','recommendations']);
 let token=null,bcData=null,lastReport=null,chart=null;
 
 function switchTab(n){
@@ -242,11 +239,12 @@ function switchTab(n){
   if(n==='dashboard')renderDashboard();
   if(n==='schedule')renderSchedule();
 }
-function selectEnv(btn,env){selEnv=env;document.querySelectorAll('.env-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');resetConn()}
+function selectEnv(btn,env){resetConn()}
 function toggleType(btn){const t=btn.dataset.type;if(selTypes.has(t)){if(selTypes.size>1){selTypes.delete(t);btn.classList.remove('active')}}else{selTypes.add(t);btn.classList.add('active')}}
 function resetConn(){token=null;bcData=null;setCS('pending','Entrez vos identifiants');document.getElementById('company-select').style.display='none'}
 function setCS(s,m){const el=document.getElementById('conn-status');el.className='conn-ind conn-'+s;el.innerHTML=`<span class="dot-s dot-${s}"></span><span>${m}</span>`}
 
+function getEnv(){return document.getElementById('envName').value.trim()||'production'}
 function getTID(){return document.getElementById('tenantId').value.trim().replace(/^https?:\/\/[^/]+\//,'').replace(/^[^/]*\//,'').split('/')[0].trim()}
 function getCID(){return document.getElementById('clientId').value.trim()}
 function getSEC(){return document.getElementById('clientSecret').value.trim()}
@@ -259,7 +257,7 @@ async function getToken(scope){
 }
 async function bcGet(path){
   const tid=getTID();
-  const url=`https://api.businesscentral.dynamics.com/v2.0/${tid}/${selEnv}${path}`;
+  const url=`https://api.businesscentral.dynamics.com/v2.0/${tid}/${getEnv()}${path}`;
   const r=await fetch('/api/bc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,token})});
   const d=await r.json();if(d.error)throw new Error(d.error);return d;
 }
@@ -297,7 +295,7 @@ async function runAssessment(){
   try{
     bcData=await fetchBCData(cid);
     ra.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Analyse IA en cours...</span></div>`;
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:buildPrompt(cname,selEnv,selTypes,bcData)}]})});
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:buildPrompt(cname,getEnv(),selTypes,bcData)}]})});
     const d=await res.json();
     lastReport=JSON.parse(d.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
     saveToHistory(lastReport);renderReport(lastReport,bcData);updateEmailPreview(lastReport);
