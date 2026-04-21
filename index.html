@@ -8,22 +8,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --bg:#ffffff;--bg2:#f5f5f3;--bg3:#efefec;
-      --text:#1a1a18;--text2:#6b6b67;--text3:#9c9a92;
-      --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
-      --blue:#378ADD;--blue-bg:#E6F1FB;--blue-dark:#0C447C;--blue-mid:#185FA5;
-      --green-bg:#EAF3DE;--green:#3B6D11;
-      --red-bg:#FCEBEB;--red:#A32D2D;
-      --amber-bg:#FAEEDA;--amber:#633806;
-      --radius:12px;--radius-sm:8px;
-      --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    }
-    @media(prefers-color-scheme:dark){
-      :root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2c;--text:#e8e6df;--text2:#9c9a92;--text3:#6b6b67;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);--blue-bg:#0c2340;--blue-dark:#85B7EB;--blue-mid:#85B7EB;--green-bg:#0f2009;--green:#97C459;--red-bg:#2a0a0a;--red:#F09595;--amber-bg:#2a1800;--amber:#FAC775}
-    }
+    :root{--bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b67;--text3:#9c9a92;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);--blue:#378ADD;--blue-bg:#E6F1FB;--blue-dark:#0C447C;--blue-mid:#185FA5;--green-bg:#EAF3DE;--green:#3B6D11;--red-bg:#FCEBEB;--red:#A32D2D;--amber-bg:#FAEEDA;--amber:#633806;--purple-bg:#EEEDFE;--purple:#3C3489;--radius:12px;--radius-sm:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    @media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2c;--text:#e8e6df;--text2:#9c9a92;--text3:#6b6b67;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);--blue-bg:#0c2340;--blue-dark:#85B7EB;--blue-mid:#85B7EB;--green-bg:#0f2009;--green:#97C459;--red-bg:#2a0a0a;--red:#F09595;--amber-bg:#2a1800;--amber:#FAC775;--purple-bg:#1a1840;--purple:#AFA9EC}}
     body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:100vh}
-    .page{max-width:720px;margin:0 auto;padding:2rem 1rem 4rem}
+    .page{max-width:760px;margin:0 auto;padding:2rem 1rem 4rem}
     .logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
     .logo-icon{width:36px;height:36px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center}
     .logo-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round}
@@ -36,9 +24,11 @@
     .card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
     .slabel{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
     .field label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
-    input,select{width:100%;padding:8px 11px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color .15s}
-    input:focus,select:focus{border-color:var(--blue)}
+    input,select,textarea{width:100%;padding:8px 11px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color .15s}
+    input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+    textarea{resize:vertical;min-height:70px;line-height:1.5}
     .env-sel{display:flex;gap:6px}
     .env-btn{flex:1;padding:8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all .15s}
     .env-btn.active{border-color:var(--blue);background:var(--blue-bg);color:var(--blue-mid)}
@@ -54,19 +44,14 @@
     .btn-sm{padding:7px 13px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;cursor:pointer;color:var(--text);font-family:var(--font);transition:background .15s}
     .btn-sm:hover{background:var(--bg2)}.btn-sm:disabled{opacity:.4;cursor:not-allowed}
     .conn-ind{display:flex;align-items:center;gap:8px;font-size:12px;padding:7px 11px;border-radius:var(--radius-sm);margin-top:8px}
-    .conn-ok{background:var(--green-bg);color:var(--green)}
-    .conn-err{background:var(--red-bg);color:var(--red)}
-    .conn-pending{background:var(--bg2);color:var(--text2)}
+    .conn-ok{background:var(--green-bg);color:var(--green)}.conn-err{background:var(--red-bg);color:var(--red)}.conn-pending{background:var(--bg2);color:var(--text2)}
     .dot-s{width:7px;height:7px;border-radius:50%;flex-shrink:0}
     .dot-ok{background:#639922}.dot-err{background:#E24B4A}.dot-pending{background:#888}
     .spinner{width:15px;height:15px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
     @keyframes spin{to{transform:rotate(360deg)}}
     .status-bar{display:flex;align-items:center;gap:9px;padding:10px 14px;background:var(--bg2);border-radius:var(--radius-sm);margin-bottom:10px;font-size:12px;color:var(--text2)}
     .tag{font-size:11px;padding:2px 7px;border-radius:99px;font-weight:500}
-    .tag-crit{background:var(--red-bg);color:var(--red)}
-    .tag-warn{background:var(--amber-bg);color:var(--amber)}
-    .tag-ok{background:var(--green-bg);color:var(--green)}
-    .tag-info{background:var(--blue-bg);color:var(--blue-mid)}
+    .tag-crit{background:var(--red-bg);color:var(--red)}.tag-warn{background:var(--amber-bg);color:var(--amber)}.tag-ok{background:var(--green-bg);color:var(--green)}.tag-info{background:var(--blue-bg);color:var(--blue-mid)}
     .finding-list{list-style:none}
     .finding-list li{font-size:12px;color:var(--text2);padding:5px 0;border-bottom:0.5px solid var(--border);display:flex;align-items:flex-start;gap:7px;line-height:1.5}
     .finding-list li:last-child{border-bottom:none}
@@ -77,14 +62,32 @@
     .metric .val{font-size:18px;font-weight:600;color:var(--text)}
     .metric .lbl{font-size:10px;color:var(--text2);margin-top:1px}
     .score-badge{font-size:20px;font-weight:700;color:var(--blue-dark);background:var(--blue-bg);padding:5px 12px;border-radius:var(--radius-sm)}
-    .report-hdr{padding:.9rem 1.1rem;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .report-hdr{padding:.9rem 1.1rem;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
     .report-title{font-size:14px;font-weight:600;color:var(--text)}
     .report-meta{font-size:11px;color:var(--text2);margin-top:2px}
     .report-body{padding:1.1rem}
-    .section-block{margin-bottom:1.1rem}
-    .section-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:7px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+    .section-block{margin-bottom:1.25rem}
+    .section-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
     .export-bar{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
     .data-badge{display:inline-flex;align-items:center;font-size:10px;padding:2px 7px;border-radius:99px;background:var(--green-bg);color:var(--green);font-weight:500}
+    .module-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
+    .module-card{background:var(--bg2);border-radius:var(--radius-sm);padding:10px;text-align:center;border:0.5px solid var(--border)}
+    .module-card .mscore{font-size:22px;font-weight:700;margin-bottom:2px}
+    .module-card .mname{font-size:11px;color:var(--text2);font-weight:500}
+    .module-card .mbar{height:4px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden}
+    .module-card .mbar-fill{height:100%;border-radius:2px;transition:width .6s}
+    .bench-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:12px}
+    .bench-row:last-child{border-bottom:none}
+    .bench-label{flex:1;color:var(--text2)}
+    .bench-val{font-weight:500;color:var(--text);min-width:40px;text-align:right}
+    .bench-ref{font-size:11px;color:var(--text3);min-width:60px;text-align:right}
+    .bench-bar-wrap{width:80px;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+    .bench-bar-fill{height:100%;border-radius:3px}
+    .question-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px}
+    .question-card label{font-size:13px;font-weight:500;color:var(--text);display:block;margin-bottom:8px}
+    .radio-group{display:flex;flex-direction:column;gap:6px}
+    .radio-opt{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer}
+    .radio-opt input{width:auto;margin:0}
     .hist-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border);cursor:pointer}
     .hist-item:last-child{border-bottom:none}
     .hist-score{width:44px;height:44px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:var(--blue-bg)}
@@ -108,24 +111,24 @@
     .toggle input:checked+.tslider:before{transform:translateX(13px)}
     .error-msg{background:var(--red-bg);border:0.5px solid #F09595;border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--red);line-height:1.6}
     .empty{text-align:center;padding:2rem 0;color:var(--text2);font-size:13px}
-    .trend-up{color:#639922;font-size:11px;font-weight:500}
-    .trend-dn{color:#E24B4A;font-size:11px;font-weight:500}
-    .email-preview{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--text2);line-height:1.7;margin-top:8px}
-    code{font-size:11px;background:var(--bg2);padding:1px 5px;border-radius:4px;font-family:monospace}
-    .info-box{background:var(--blue-bg);border:0.5px solid #B5D4F4;border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--blue-dark);margin-top:8px;line-height:1.6}
-    @media(max-width:500px){.grid2{grid-template-columns:1fr}.type-grid{grid-template-columns:1fr}}
+    .trend-up{color:#639922;font-size:11px;font-weight:500}.trend-dn{color:#E24B4A;font-size:11px;font-weight:500}
+    .info-box{background:var(--blue-bg);border:0.5px solid #B5D4F4;border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--blue-dark);margin-bottom:10px;line-height:1.6}
+    .step-wizard{display:flex;gap:6px;margin-bottom:1.25rem;align-items:center}
+    .step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;transition:all .2s}
+    .step-dot.active{background:var(--blue);color:#fff}
+    .step-dot.done{background:var(--green-bg);color:var(--green)}
+    .step-dot.inactive{background:var(--bg2);color:var(--text3);border:0.5px solid var(--border)}
+    .step-line{flex:1;height:1px;background:var(--border)}
+    .step-label{font-size:11px;color:var(--text2);text-align:center;margin-top:3px}
+    .wizard-step{display:none}.wizard-step.active{display:block}
+    @media(max-width:500px){.grid2{grid-template-columns:1fr}.type-grid{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body>
 <div class="page">
   <div class="logo">
-    <div class="logo-icon">
-      <svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>
-    </div>
-    <div>
-      <div class="logo-text">BC Assessment</div>
-      <div class="logo-sub">Business Central · Powered by AI</div>
-    </div>
+    <div class="logo-icon"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg></div>
+    <div><div class="logo-text">BC Assessment</div><div class="logo-sub">Business Central · Powered by AI · PME Edition</div></div>
   </div>
 
   <div class="tabs">
@@ -135,119 +138,243 @@
     <button class="tab" onclick="switchTab('email')">Email</button>
   </div>
 
+  <!-- ASSESSMENT -->
   <div id="tab-assess" class="panel active">
-    <div class="card">
-      <div class="slabel">Connexion Business Central</div>
-      <div class="info-box">Saisissez uniquement les identifiants (GUID), pas les URLs complètes.</div>
-      <div class="grid2" style="margin-bottom:10px;margin-top:10px">
-        <div class="field"><label>Tenant ID <span style="color:var(--text3)">(GUID uniquement)</span></label><input type="text" id="tenantId" placeholder="24c585fa-e1f5-4890-88d2-..." oninput="resetConn()"/></div>
-        <div class="field"><label>Client ID</label><input type="text" id="clientId" placeholder="77ec1905-016d-4492-..." oninput="resetConn()"/></div>
+
+    <!-- WIZARD STEPS -->
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem">
+      <div class="step-wizard">
+        <div style="text-align:center;flex:0 0 auto">
+          <div class="step-dot active" id="sd1">1</div>
+          <div class="step-label">Connexion</div>
+        </div>
+        <div class="step-line"></div>
+        <div style="text-align:center;flex:0 0 auto">
+          <div class="step-dot inactive" id="sd2">2</div>
+          <div class="step-label">Contexte</div>
+        </div>
+        <div class="step-line"></div>
+        <div style="text-align:center;flex:0 0 auto">
+          <div class="step-dot inactive" id="sd3">3</div>
+          <div class="step-label">Modules</div>
+        </div>
+        <div class="step-line"></div>
+        <div style="text-align:center;flex:0 0 auto">
+          <div class="step-dot inactive" id="sd4">4</div>
+          <div class="step-label">Analyse</div>
+        </div>
       </div>
-      <div class="field" style="margin-bottom:10px"><label>Client Secret</label><input type="password" id="clientSecret" placeholder="Valeur du secret (pas l'ID)" oninput="resetConn()"/></div>
-      <div class="field"><label>Nom de l'environnement <span style="color:var(--text3)">(ex: CXD_FRANCE_TEST)</span></label>
-        <input type="text" id="envName" placeholder="production" value="production" oninput="resetConn()"/>
+
+      <!-- STEP 1 : CONNEXION -->
+      <div class="wizard-step active" id="ws1">
+        <div class="slabel">Connexion Business Central</div>
+        <div class="info-box">Saisissez uniquement les GUIDs, pas les URLs complètes.</div>
+        <div class="grid2" style="margin-bottom:10px">
+          <div class="field"><label>Tenant ID</label><input type="text" id="tenantId" placeholder="24c585fa-e1f5-..." oninput="resetConn()"/></div>
+          <div class="field"><label>Client ID</label><input type="text" id="clientId" placeholder="77ec1905-016d-..." oninput="resetConn()"/></div>
+        </div>
+        <div class="field" style="margin-bottom:10px"><label>Client Secret</label><input type="password" id="clientSecret" placeholder="Valeur du secret" oninput="resetConn()"/></div>
+        <div class="field" style="margin-bottom:10px"><label>Nom de l'environnement <span style="color:var(--text3)">(ex: CXD_FRANCE_TEST)</span></label><input type="text" id="envName" placeholder="production" value="production" oninput="resetConn()"/></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-sm" onclick="testConnection()">Tester la connexion →</button>
+          <button class="btn-sm" id="nextStep1" onclick="goStep(2)" disabled style="background:var(--blue);color:#fff;border-color:var(--blue)">Suivant →</button>
+        </div>
+        <div id="conn-status" class="conn-ind conn-pending"><span class="dot-s dot-pending"></span><span>Entrez vos identifiants</span></div>
+        <select id="company-select" style="margin-top:8px;display:none"><option value="">Choisir une société...</option></select>
       </div>
-      <button class="btn-sm" style="margin-top:8px" onclick="testConnection()">Tester la connexion →</button>
-      <div id="conn-status" class="conn-ind conn-pending"><span class="dot-s dot-pending"></span><span>Entrez vos identifiants</span></div>
-      <select id="company-select" style="margin-top:8px;display:none"><option value="">Choisir une société...</option></select>
+
+      <!-- STEP 2 : CONTEXTE PME -->
+      <div class="wizard-step" id="ws2">
+        <div class="slabel">Contexte de l'entreprise</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">Ces informations permettent de contextualiser l'audit et de comparer avec les bonnes pratiques PME.</p>
+        <div class="grid2" style="margin-bottom:10px">
+          <div class="field"><label>Secteur d'activité</label>
+            <select id="ctx-secteur">
+              <option value="distribution">Distribution / Commerce</option>
+              <option value="manufacturing">Industrie / Manufacturing</option>
+              <option value="services">Services professionnels</option>
+              <option value="construction">Construction / BTP</option>
+              <option value="retail">Retail / E-commerce</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+          <div class="field"><label>Nombre d'utilisateurs BC</label>
+            <select id="ctx-users">
+              <option value="1-5">1 à 5</option>
+              <option value="6-15">6 à 15</option>
+              <option value="16-30">16 à 30</option>
+              <option value="31-50">31 à 50</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid2" style="margin-bottom:10px">
+          <div class="field"><label>Version BC utilisée</label>
+            <select id="ctx-version">
+              <option value="BC25">BC 25 (2024 Wave 2)</option>
+              <option value="BC24">BC 24 (2024 Wave 1)</option>
+              <option value="BC23">BC 23 (2023 Wave 2)</option>
+              <option value="BC22">BC 22 ou antérieur</option>
+            </select>
+          </div>
+          <div class="field"><label>Durée d'utilisation de BC</label>
+            <select id="ctx-age">
+              <option value="moins1an">Moins d'1 an</option>
+              <option value="1-3ans">1 à 3 ans</option>
+              <option value="3-5ans">3 à 5 ans</option>
+              <option value="plus5ans">Plus de 5 ans</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Préoccupations principales du client <span style="color:var(--text3)">(optionnel)</span></label>
+          <textarea id="ctx-concerns" placeholder="Ex: lenteurs sur les clôtures mensuelles, erreurs de stock fréquentes, difficultés d'utilisation par les équipes..."></textarea>
+        </div>
+
+        <div class="slabel" style="margin-top:4px">Questions consultant pré-audit</div>
+        <div class="question-card">
+          <label>Les clôtures comptables mensuelles sont-elles effectuées dans les délais ?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="q1" value="oui"> Oui, toujours dans les délais</label>
+            <label class="radio-opt"><input type="radio" name="q1" value="parfois"> Parfois avec du retard</label>
+            <label class="radio-opt"><input type="radio" name="q1" value="non"> Non, régulièrement en retard</label>
+          </div>
+        </div>
+        <div class="question-card">
+          <label>Les niveaux de stock sont-ils fiables par rapport à la réalité physique ?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="q2" value="oui"> Oui, fiables</label>
+            <label class="radio-opt"><input type="radio" name="q2" value="ecarts"> Écarts fréquents</label>
+            <label class="radio-opt"><input type="radio" name="q2" value="non"> Non gérés dans BC</label>
+          </div>
+        </div>
+        <div class="question-card">
+          <label>Les utilisateurs ont-ils reçu une formation initiale sur BC ?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="q3" value="oui"> Oui, formation complète</label>
+            <label class="radio-opt"><input type="radio" name="q3" value="partielle"> Formation partielle</label>
+            <label class="radio-opt"><input type="radio" name="q3" value="non"> Non ou autodidacte</label>
+          </div>
+        </div>
+        <div class="question-card">
+          <label>Des personnalisations ou extensions ont-elles été développées ?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="q4" value="non"> Non, BC standard</label>
+            <label class="radio-opt"><input type="radio" name="q4" value="extensions"> Extensions AppSource uniquement</label>
+            <label class="radio-opt"><input type="radio" name="q4" value="custom"> Développements personnalisés (AL)</label>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn-sm" onclick="goStep(1)">← Retour</button>
+          <button class="btn-sm" onclick="goStep(3)" style="background:var(--blue);color:#fff;border-color:var(--blue)">Suivant →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3 : MODULES -->
+      <div class="wizard-step" id="ws3">
+        <div class="slabel">Modules à auditer</div>
+        <div class="type-grid" style="margin-bottom:12px">
+          <button class="type-btn active" data-type="finance" onclick="toggleType(this)"><strong>Finance & Comptabilité</strong><span>Plan comptable, clôtures, budget</span></button>
+          <button class="type-btn active" data-type="achats" onclick="toggleType(this)"><strong>Achats & Fournisseurs</strong><span>Commandes, factures, paiements</span></button>
+          <button class="type-btn active" data-type="ventes" onclick="toggleType(this)"><strong>Ventes & Clients</strong><span>Devis, commandes, recouvrement</span></button>
+          <button class="type-btn active" data-type="stock" onclick="toggleType(this)"><strong>Stock & Inventaire</strong><span>Niveaux, valorisation, mouvements</span></button>
+          <button class="type-btn active" data-type="immobilisations" onclick="toggleType(this)"><strong>Immobilisations</strong><span>Amortissements, cessions</span></button>
+          <button class="type-btn active" data-type="securite" onclick="toggleType(this)"><strong>Sécurité & Droits</strong><span>Profils, rôles, ségrégation</span></button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-sm" onclick="goStep(2)">← Retour</button>
+          <button class="btn-sm" onclick="goStep(4)" style="background:var(--blue);color:#fff;border-color:var(--blue)">Lancer l'analyse →</button>
+        </div>
+      </div>
+
+      <!-- STEP 4 : RÉSULTAT -->
+      <div class="wizard-step" id="ws4">
+        <button class="btn-primary" id="runBtn" onclick="runAssessment()">Lancer l'assessment complet</button>
+        <div id="resultArea" style="margin-top:1rem"></div>
+      </div>
     </div>
-    <div class="card">
-      <div class="slabel">Types d'assessment</div>
-      <div class="type-grid">
-        <button class="type-btn active" data-type="audit" onclick="toggleType(this)"><strong>Audit de configuration</strong><span>Paramètres, droits, workflows</span></button>
-        <button class="type-btn active" data-type="performance" onclick="toggleType(this)"><strong>Analyse des performances</strong><span>Volumes, transactions</span></button>
-        <button class="type-btn active" data-type="compliance" onclick="toggleType(this)"><strong>Conformité / risques</strong><span>RGPD, ségrégation des tâches</span></button>
-        <button class="type-btn active" data-type="recommendations" onclick="toggleType(this)"><strong>Recommandations</strong><span>Plan d'amélioration priorisé</span></button>
-      </div>
-    </div>
-    <button class="btn-primary" id="runBtn" onclick="runAssessment()">Lancer l'assessment</button>
-    <div id="resultArea" style="margin-top:1rem"></div>
   </div>
 
+  <!-- DASHBOARD -->
   <div id="tab-dashboard" class="panel">
-    <div class="card">
-      <div class="slabel">Évolution du score global</div>
-      <div class="chart-wrap"><canvas id="scoreChart"></canvas></div>
-    </div>
+    <div class="card"><div class="slabel">Évolution du score global</div><div class="chart-wrap"><canvas id="scoreChart"></canvas></div></div>
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div class="slabel" style="margin:0">Historique des assessments</div>
+        <div class="slabel" style="margin:0">Historique</div>
         <button class="btn-sm" style="font-size:11px;color:var(--red);border-color:#F09595" onclick="clearHistory()">Tout effacer</button>
       </div>
       <div id="histList"><div class="empty">Aucun assessment enregistré.</div></div>
     </div>
   </div>
 
+  <!-- PLANIFICATION -->
   <div id="tab-schedule" class="panel">
     <div class="card">
       <div class="slabel">Planification automatique</div>
-      <div class="sched-row">
-        <label class="toggle"><input type="checkbox" id="sched-monthly" onchange="saveSched()"><span class="tslider"></span></label>
-        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Mensuel</div><div class="sched-next" id="next-monthly">Désactivé</div></div>
-        <span class="sched-freq">1er du mois</span>
-      </div>
-      <div class="sched-row">
-        <label class="toggle"><input type="checkbox" id="sched-quarterly" onchange="saveSched()"><span class="tslider"></span></label>
-        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Trimestriel</div><div class="sched-next" id="next-quarterly">Désactivé</div></div>
-        <span class="sched-freq">Tous les 3 mois</span>
-      </div>
-      <div class="sched-row">
-        <label class="toggle"><input type="checkbox" id="sched-weekly" onchange="saveSched()"><span class="tslider"></span></label>
-        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Hebdomadaire</div><div class="sched-next" id="next-weekly">Désactivé</div></div>
-        <span class="sched-freq">Chaque lundi</span>
-      </div>
+      <div class="sched-row"><label class="toggle"><input type="checkbox" id="sched-monthly" onchange="saveSched()"><span class="tslider"></span></label><div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Mensuel</div><div class="sched-next" id="next-monthly">Désactivé</div></div><span class="sched-freq">1er du mois</span></div>
+      <div class="sched-row"><label class="toggle"><input type="checkbox" id="sched-quarterly" onchange="saveSched()"><span class="tslider"></span></label><div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Trimestriel</div><div class="sched-next" id="next-quarterly">Désactivé</div></div><span class="sched-freq">Tous les 3 mois</span></div>
+      <div class="sched-row"><label class="toggle"><input type="checkbox" id="sched-weekly" onchange="saveSched()"><span class="tslider"></span></label><div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Hebdomadaire</div><div class="sched-next" id="next-weekly">Désactivé</div></div><span class="sched-freq">Chaque lundi</span></div>
     </div>
     <div class="card">
-      <div class="slabel">Destinataires & société</div>
+      <div class="slabel">Destinataires</div>
       <div class="field" style="margin-bottom:10px"><label>Adresses email</label><input type="text" id="sched-emails" placeholder="cfo@societe.com, dsi@societe.com" oninput="saveSched()"/></div>
       <div class="field"><label>Société à analyser</label><input type="text" id="sched-company" placeholder="Nom de la société BC" oninput="saveSched()"/></div>
       <div id="sched-status" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
     </div>
-    <div class="card">
-      <div class="slabel">Prochains assessments planifiés</div>
-      <div id="pendingList"><div class="empty" style="padding:1rem 0">Aucune planification active.</div></div>
-    </div>
+    <div class="card"><div class="slabel">Prochains assessments</div><div id="pendingList"><div class="empty" style="padding:1rem 0">Aucune planification active.</div></div></div>
   </div>
 
+  <!-- EMAIL -->
   <div id="tab-email" class="panel">
     <div class="card">
-      <div class="slabel">Envoi via Microsoft 365 / Graph API</div>
-      <div class="field" style="margin-bottom:10px"><label>Client ID Azure AD (permission Mail.Send)</label><input type="text" id="graphClientId" placeholder="App registration avec Mail.Send"/></div>
-      <div class="field" style="margin-bottom:10px"><label>Expéditeur (adresse M365)</label><input type="text" id="senderEmail" placeholder="assessment@votresociete.com"/></div>
-      <div class="field" style="margin-bottom:10px"><label>Destinataires (séparés par virgules)</label><input type="text" id="recipientEmails" placeholder="cfo@societe.com, dsi@societe.com"/></div>
+      <div class="slabel">Envoi via Microsoft 365</div>
+      <div class="field" style="margin-bottom:10px"><label>Client ID Azure AD (Mail.Send)</label><input type="text" id="graphClientId" placeholder="App registration ID"/></div>
+      <div class="field" style="margin-bottom:10px"><label>Expéditeur</label><input type="text" id="senderEmail" placeholder="assessment@societe.com"/></div>
+      <div class="field" style="margin-bottom:10px"><label>Destinataires</label><input type="text" id="recipientEmails" placeholder="cfo@societe.com, dsi@societe.com"/></div>
       <div class="field" style="margin-bottom:12px"><label>Objet</label><input type="text" id="emailSubject" value="Rapport d'assessment ERP Business Central"/></div>
-      <button class="btn-sm" id="sendEmailBtn" onclick="sendEmail()" disabled>Envoyer le rapport par email</button>
-      <p style="font-size:11px;color:var(--text2);margin-top:6px">Un rapport doit être généré avant l'envoi.</p>
+      <button class="btn-sm" id="sendEmailBtn" onclick="sendEmail()" disabled>Envoyer le rapport</button>
       <div id="emailStatus" style="margin-top:8px"></div>
-    </div>
-    <div class="card">
-      <div class="slabel">Aperçu de l'email</div>
-      <div class="email-preview" id="emailPreview">L'aperçu apparaîtra après la génération d'un assessment.</div>
     </div>
   </div>
 </div>
 
 <script>
 const SK='bc_assessment_history',SCHK='bc_assessment_schedule';
-let selTypes=new Set(['audit','performance','compliance','recommendations']);
-let token=null,bcData=null,lastReport=null,chart=null;
+let selTypes=new Set(['finance','achats','ventes','stock','immobilisations','securite']);
+let token=null,bcData=null,lastReport=null,chart=null,currentStep=1;
 
-function switchTab(n){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['assess','dashboard','schedule','email'][i]===n));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+n).classList.add('active');
-  if(n==='dashboard')renderDashboard();
-  if(n==='schedule')renderSchedule();
+function switchTab(n){document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['assess','dashboard','schedule','email'][i]===n));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+n).classList.add('active');if(n==='dashboard')renderDashboard();if(n==='schedule')renderSchedule()}
+
+function goStep(n){
+  currentStep=n;
+  document.querySelectorAll('.wizard-step').forEach((s,i)=>s.classList.toggle('active',i+1===n));
+  ['sd1','sd2','sd3','sd4'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.className='step-dot '+(i+1<n?'done':i+1===n?'active':'inactive');
+  });
+  if(n===4)document.getElementById('runBtn').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-function selectEnv(btn,env){resetConn()}
-function toggleType(btn){const t=btn.dataset.type;if(selTypes.has(t)){if(selTypes.size>1){selTypes.delete(t);btn.classList.remove('active')}}else{selTypes.add(t);btn.classList.add('active')}}
-function resetConn(){token=null;bcData=null;setCS('pending','Entrez vos identifiants');document.getElementById('company-select').style.display='none'}
-function setCS(s,m){const el=document.getElementById('conn-status');el.className='conn-ind conn-'+s;el.innerHTML=`<span class="dot-s dot-${s}"></span><span>${m}</span>`}
 
+function toggleType(btn){const t=btn.dataset.type;if(selTypes.has(t)){if(selTypes.size>1){selTypes.delete(t);btn.classList.remove('active')}}else{selTypes.add(t);btn.classList.add('active')}}
+function resetConn(){token=null;bcData=null;setCS('pending','Entrez vos identifiants');document.getElementById('company-select').style.display='none';document.getElementById('nextStep1').disabled=true}
+function setCS(s,m){const el=document.getElementById('conn-status');el.className='conn-ind conn-'+s;el.innerHTML=`<span class="dot-s dot-${s}"></span><span>${m}</span>`}
 function getEnv(){return document.getElementById('envName').value.trim()||'production'}
-function getTID(){return document.getElementById('tenantId').value.trim().replace(/^https?:\/\/[^/]+\//,'').replace(/^[^/]*\//,'').split('/')[0].trim()}
+function getTID(){return document.getElementById('tenantId').value.trim()}
 function getCID(){return document.getElementById('clientId').value.trim()}
 function getSEC(){return document.getElementById('clientSecret').value.trim()}
+function getCtx(){
+  return {
+    secteur: document.getElementById('ctx-secteur').value,
+    users: document.getElementById('ctx-users').value,
+    version: document.getElementById('ctx-version').value,
+    age: document.getElementById('ctx-age').value,
+    concerns: document.getElementById('ctx-concerns').value,
+    q1: document.querySelector('input[name="q1"]:checked')?.value||'non renseigné',
+    q2: document.querySelector('input[name="q2"]:checked')?.value||'non renseigné',
+    q3: document.querySelector('input[name="q3"]:checked')?.value||'non renseigné',
+    q4: document.querySelector('input[name="q4"]:checked')?.value||'non renseigné',
+  }
+}
 
 async function getToken(scope){
   const tid=getTID(),cid=getCID(),sec=getSEC();
@@ -262,7 +389,7 @@ async function bcGet(path){
   const d=await r.json();if(d.error)throw new Error(d.error);return d;
 }
 async function testConnection(){
-  const btn=document.querySelector('#tab-assess .btn-sm');btn.disabled=true;btn.textContent='Connexion...';
+  const btn=document.querySelector('#ws1 .btn-sm');btn.disabled=true;btn.textContent='Connexion...';
   setCS('pending','Authentification OAuth2...');
   try{
     token=await getToken();
@@ -271,51 +398,234 @@ async function testConnection(){
     const cos=d.value||[];if(!cos.length)throw new Error('Aucune société trouvée');
     const sel=document.getElementById('company-select');
     sel.innerHTML='<option value="">Choisir une société...</option>'+cos.map(c=>`<option value="${c.id}">${c.displayName}</option>`).join('');
-    sel.style.display='block';setCS('ok',`Connecté — ${cos.length} société(s)`);
+    sel.style.display='block';
+    setCS('ok',`Connecté — ${cos.length} société(s)`);
+    document.getElementById('nextStep1').disabled=false;
   }catch(e){setCS('err',e.message);token=null}
   btn.disabled=false;btn.textContent='Tester la connexion →';
 }
+
 async function fetchBCData(cid){
-  const eps=[['/api/v2.0/companies('+cid+')/accounts?$top=200','accounts'],['/api/v2.0/companies('+cid+')/customers?$top=100','customers'],['/api/v2.0/companies('+cid+')/vendors?$top=100','vendors'],['/api/v2.0/companies('+cid+')/generalLedgerEntries?$top=100&$orderby=postingDate desc','glEntries'],['/api/v2.0/companies('+cid+')/salesOrders?$top=50','salesOrders'],['/api/v2.0/companies('+cid+')/purchaseOrders?$top=50','purchaseOrders']];
-  const r={};for(const[p,k]of eps){try{const d=await bcGet(p);r[k]=d.value||[]}catch{r[k]=[]}}return r;
+  const eps=[
+    ['/api/v2.0/companies('+cid+')/accounts?$top=200','accounts'],
+    ['/api/v2.0/companies('+cid+')/customers?$top=100','customers'],
+    ['/api/v2.0/companies('+cid+')/vendors?$top=100','vendors'],
+    ['/api/v2.0/companies('+cid+')/generalLedgerEntries?$top=200&$orderby=postingDate desc','glEntries'],
+    ['/api/v2.0/companies('+cid+')/salesOrders?$top=100','salesOrders'],
+    ['/api/v2.0/companies('+cid+')/purchaseOrders?$top=100','purchaseOrders'],
+    ['/api/v2.0/companies('+cid+')/items?$top=200','items'],
+    ['/api/v2.0/companies('+cid+')/fixedAssets?$top=100','fixedAssets'],
+    ['/api/v2.0/companies('+cid+')/journals?$top=50','journals'],
+    ['/api/v2.0/companies('+cid+')/taxGroups?$top=50','taxGroups'],
+  ];
+  const r={};
+  for(const[p,k]of eps){try{const d=await bcGet(p);r[k]=d.value||[]}catch{r[k]=[]}}
+  return r;
 }
-function buildPrompt(name,env,types,data){
-  const s={comptes:data.accounts?.length??0,clients:data.customers?.length??0,fournisseurs:data.vendors?.length??0,ecritures:data.glEntries?.length??0,cmd_vente:data.salesOrders?.length??0,cmd_achat:data.purchaseOrders?.length??0,derniere_ecriture:data.glEntries?.[0]?.postingDate??'N/A',comptes_bloques:data.accounts?.filter(a=>a.blocked).length??0,clients_bloques:data.customers?.filter(c=>c.blocked).length??0,fournisseurs_bloques:data.vendors?.filter(v=>v.blocked).length??0};
-  const tl={audit:'Audit de configuration',performance:'Performances',compliance:'Conformité & risques',recommendations:'Recommandations'};
-  return `Expert ERP BC certifié. Assessment pour "${name}" (${env}). Données réelles: ${JSON.stringify(s)}. Analyse: ${[...types].map(t=>tl[t]).join(', ')}. Réponds UNIQUEMENT en JSON sans markdown: {"score_global":<0-100>,"societe":"${name}","environnement":"${env}","synthese":"<2-3 phrases>","donnees_reelles":true,"metrics":{"modules_actifs":<n>,"utilisateurs":<n>,"transactions_jour":<n>,"alertes_critiques":<n>},"sections":[{"id":"audit","titre":"<titre>","score":<0-100>,"niveau":"critique|attention|bon|excellent","findings":[{"gravite":"critique|attention|info|ok","texte":"<constat>"}]}]}`;
+
+function buildPrompt(name,env,types,data,ctx){
+  const s={
+    comptes:data.accounts?.length??0,
+    clients:data.customers?.length??0,clients_bloques:data.customers?.filter(c=>c.blocked).length??0,
+    fournisseurs:data.vendors?.length??0,fournisseurs_bloques:data.vendors?.filter(v=>v.blocked).length??0,
+    ecritures_gl:data.glEntries?.length??0,
+    derniere_ecriture:data.glEntries?.[0]?.postingDate??'N/A',
+    cmd_vente_ouvertes:data.salesOrders?.length??0,
+    cmd_achat_ouvertes:data.purchaseOrders?.length??0,
+    articles:data.items?.length??0,articles_bloques:data.items?.filter(i=>i.blocked).length??0,
+    immobilisations:data.fixedAssets?.length??0,
+    journaux:data.journals?.length??0,
+    groupes_tva:data.taxGroups?.length??0,
+    comptes_bloques:data.accounts?.filter(a=>a.blocked).length??0,
+  };
+  const modulesList=[...types].join(', ');
+  return `Tu es un expert ERP Microsoft Business Central certifié avec 15 ans d'expérience dans les PME européennes. Génère un rapport d'assessment COMPLET et DÉTAILLÉ.
+
+SOCIÉTÉ: ${name} | ENVIRONNEMENT: ${env} | VERSION: ${ctx.version}
+SECTEUR: ${ctx.secteur} | UTILISATEURS: ${ctx.users} | ANCIENNETÉ BC: ${ctx.age}
+PRÉOCCUPATIONS CLIENT: ${ctx.concerns||'Non renseigné'}
+
+RÉPONSES CONSULTANT PRÉ-AUDIT:
+- Clôtures mensuelles dans les délais: ${ctx.q1}
+- Fiabilité des stocks: ${ctx.q2}
+- Formation des utilisateurs: ${ctx.q3}
+- Personnalisations: ${ctx.q4}
+
+DONNÉES RÉELLES EXTRAITES DE BC:
+${JSON.stringify(s,null,2)}
+
+MODULES À AUDITER: ${modulesList}
+
+BENCHMARKS PME (référence secteur ${ctx.secteur}, ${ctx.users} utilisateurs):
+- Taux comptes bloqués acceptable: <5%
+- Délai clôture mensuelle PME: <5 jours ouvrés
+- Ratio commandes ouvertes/écritures GL: <20%
+- Taux articles bloqués acceptable: <3%
+
+Génère un rapport JSON structuré et exhaustif. Réponds UNIQUEMENT en JSON valide sans markdown:
+{
+  "score_global": <0-100>,
+  "societe": "${name}",
+  "environnement": "${env}",
+  "secteur": "${ctx.secteur}",
+  "synthese": "<3-4 phrases executives basées sur les données réelles et le contexte PME>",
+  "points_forts": ["<point fort 1>","<point fort 2>","<point fort 3>"],
+  "risques_prioritaires": ["<risque 1>","<risque 2>","<risque 3>"],
+  "donnees_reelles": true,
+  "metrics": {
+    "modules_actifs": <n>,
+    "utilisateurs_estimes": <n>,
+    "transactions_mois": <n>,
+    "alertes_critiques": <n>,
+    "taux_comptes_bloques": <pourcent>,
+    "taux_clients_bloques": <pourcent>,
+    "taux_articles_bloques": <pourcent>
+  },
+  "modules": [
+    {
+      "id": "<finance|achats|ventes|stock|immobilisations|securite>",
+      "nom": "<nom du module>",
+      "score": <0-100>,
+      "niveau": "<critique|attention|bon|excellent>",
+      "benchmark_secteur": <0-100>,
+      "ecart_benchmark": <score - benchmark_secteur>,
+      "findings": [
+        {"gravite": "<critique|attention|info|ok>", "texte": "<constat concret basé sur les données>", "recommandation": "<action corrective concrète>"}
+      ]
+    }
+  ],
+  "plan_action": [
+    {"priorite": "<haute|moyenne|faible>", "delai": "<immédiat|1mois|3mois|6mois>", "action": "<action concrète>", "module": "<module concerné>", "impact": "<impact attendu>"}
+  ]
+}`;
 }
+
 async function runAssessment(){
   const btn=document.getElementById('runBtn'),ra=document.getElementById('resultArea');
   const sel=document.getElementById('company-select');
   const cid=sel.value,cname=sel.options[sel.selectedIndex]?.text||'Société BC';
   btn.disabled=true;
-  if(!token){ra.innerHTML=`<div class="error-msg">Testez d'abord la connexion BC.</div>`;btn.disabled=false;return}
-  if(!cid){ra.innerHTML=`<div class="error-msg">Sélectionnez une société.</div>`;btn.disabled=false;return}
-  ra.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Collecte des données BC...</span></div>`;
+  if(!token){ra.innerHTML=`<div class="error-msg">Retournez à l'étape 1 et testez la connexion.</div>`;btn.disabled=false;return}
+  if(!cid){ra.innerHTML=`<div class="error-msg">Sélectionnez une société à l'étape 1.</div>`;btn.disabled=false;return}
+  const ctx=getCtx();
+  ra.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Collecte des données BC (comptes, clients, stock, immobilisations...)...</span></div>`;
   try{
     bcData=await fetchBCData(cid);
-    ra.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Analyse IA en cours...</span></div>`;
-    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:buildPrompt(cname,getEnv(),selTypes,bcData)})});
+    ra.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Analyse IA approfondie en cours...</span></div>`;
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:buildPrompt(cname,getEnv(),selTypes,bcData,ctx)})});
     const d=await res.json();
     if(d.error)throw new Error(d.error);
-    lastReport=JSON.parse(d.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
-    saveToHistory(lastReport);renderReport(lastReport,bcData);updateEmailPreview(lastReport);
+    const text=d.content.map(i=>i.text||'').join('');
+    lastReport=JSON.parse(text.replace(/```json|```/g,'').trim());
+    saveToHistory(lastReport);
+    renderReport(lastReport,bcData);
     document.getElementById('sendEmailBtn').disabled=false;
   }catch(e){ra.innerHTML=`<div class="error-msg">Erreur : ${e.message}</div>`}
   btn.disabled=false;
 }
+
+function scoreColor(s){return s>=80?'#639922':s>=60?'#378ADD':s>=40?'#EF9F27':'#E24B4A'}
 function nTag(n){const m={critique:'tag-crit',attention:'tag-warn',bon:'tag-ok',excellent:'tag-ok'};return `<span class="tag ${m[n]||'tag-info'}">${n}</span>`}
 function dClass(g){return{critique:'dot-red',attention:'dot-amb',info:'dot-blu',ok:'dot-grn'}[g]||'dot-blu'}
+
 function renderReport(r,data){
   const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  const secs=(r.sections||[]).filter(s=>selTypes.has(s.id)).map(s=>`<div class="section-block"><div class="section-title">${s.titre} ${nTag(s.niveau)}<span style="margin-left:auto;font-size:11px;color:var(--text2)">Score: <b style="color:var(--text)">${s.score}/100</b></span></div><ul class="finding-list">${(s.findings||[]).map(f=>`<li><span class="dot ${dClass(f.gravite)}"></span>${f.texte}</li>`).join('')}</ul></div>`).join('');
+
+  // Modules scoring
+  const modulesHtml=(r.modules||[]).filter(m=>selTypes.has(m.id)).map(m=>`
+    <div class="module-card">
+      <div class="mscore" style="color:${scoreColor(m.score)}">${m.score}</div>
+      <div class="mname">${m.nom}</div>
+      ${m.ecart_benchmark!=null?`<div style="font-size:10px;color:${m.ecart_benchmark>=0?'var(--green)':'var(--red)';margin-top:2px}">${m.ecart_benchmark>=0?'+':''}${m.ecart_benchmark} vs secteur</div>`:''}
+      <div class="mbar"><div class="mbar-fill" style="width:${m.score}%;background:${scoreColor(m.score)}"></div></div>
+    </div>`).join('');
+
+  // Benchmarking
+  const benchHtml=(r.modules||[]).filter(m=>selTypes.has(m.id)).map(m=>`
+    <div class="bench-row">
+      <span class="bench-label">${m.nom}</span>
+      <div class="bench-bar-wrap"><div class="bench-bar-fill" style="width:${m.score}%;background:${scoreColor(m.score)}"></div></div>
+      <span class="bench-val" style="color:${scoreColor(m.score)}">${m.score}</span>
+      <span class="bench-ref">ref: ${m.benchmark_secteur??65}</span>
+    </div>`).join('');
+
+  // Findings par module
+  const findingsHtml=(r.modules||[]).filter(m=>selTypes.has(m.id)).map(m=>`
+    <div class="section-block">
+      <div class="section-title">${m.nom} ${nTag(m.niveau)}<span style="margin-left:auto;font-size:11px;color:var(--text2)">Score: <b style="color:var(--text)">${m.score}/100</b></span></div>
+      <ul class="finding-list">${(m.findings||[]).map(f=>`
+        <li>
+          <span class="dot ${dClass(f.gravite)}"></span>
+          <div><div>${f.texte}</div>${f.recommandation?`<div style="font-size:11px;color:var(--blue-mid);margin-top:2px">→ ${f.recommandation}</div>`:''}
+          </div>
+        </li>`).join('')}
+      </ul>
+    </div>`).join('');
+
+  // Plan d'action
+  const planHtml=(r.plan_action||[]).slice(0,8).map((p,i)=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <div style="width:22px;height:22px;border-radius:50%;background:${p.priorite==='haute'?'var(--red-bg)':p.priorite==='moyenne'?'var(--amber-bg)':'var(--green-bg)'};color:${p.priorite==='haute'?'var(--red)':p.priorite==='moyenne'?'var(--amber)':'var(--green)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${i+1}</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500;color:var(--text)">${p.action}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${p.module} · Délai: ${p.delai} · ${p.impact}</div>
+      </div>
+      <span class="tag ${p.priorite==='haute'?'tag-crit':p.priorite==='moyenne'?'tag-warn':'tag-ok'}">${p.priorite}</span>
+    </div>`).join('');
+
+  // Points forts & risques
+  const ptsFortsHtml=(r.points_forts||[]).map(p=>`<li style="display:flex;gap:7px;align-items:flex-start;padding:4px 0;font-size:12px;color:var(--text2)"><span class="dot dot-grn" style="margin-top:5px"></span>${p}</li>`).join('');
+  const risquesHtml=(r.risques_prioritaires||[]).map(p=>`<li style="display:flex;gap:7px;align-items:flex-start;padding:4px 0;font-size:12px;color:var(--text2)"><span class="dot dot-red" style="margin-top:5px"></span>${p}</li>`).join('');
+
   document.getElementById('resultArea').innerHTML=`
     <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:8px">
-      <div class="report-hdr"><div><div class="report-title">${r.societe} ${r.donnees_reelles?'<span class="data-badge">Données réelles BC</span>':''}</div><div class="report-meta">${r.environnement} · ${now}</div></div><div class="score-badge">${r.score_global}/100</div></div>
+      <div class="report-hdr">
+        <div>
+          <div class="report-title">${r.societe} <span class="data-badge">Données réelles BC</span></div>
+          <div class="report-meta">${r.environnement} · ${r.secteur||''} · ${now}</div>
+        </div>
+        <div class="score-badge">${r.score_global}/100</div>
+      </div>
       <div class="report-body">
-        <div class="section-block"><div class="slabel">Synthèse executive</div><p style="font-size:12px;color:var(--text2);line-height:1.7">${r.synthese}</p></div>
-        <div class="metrics"><div class="metric"><div class="val">${data?.accounts?.length??'—'}</div><div class="lbl">Comptes GL</div></div><div class="metric"><div class="val">${data?.customers?.length??'—'}</div><div class="lbl">Clients</div></div><div class="metric"><div class="val">${data?.vendors?.length??'—'}</div><div class="lbl">Fournisseurs</div></div><div class="metric"><div class="val" style="color:#E24B4A">${r.metrics?.alertes_critiques??'—'}</div><div class="lbl">Alertes</div></div></div>
-        <div style="border-top:0.5px solid var(--border);padding-top:.9rem;margin-top:.5rem">${secs}</div>
+
+        <div class="section-block">
+          <div class="slabel">Synthèse executive</div>
+          <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px">${r.synthese}</p>
+          <div class="grid2">
+            <div><div class="slabel" style="margin-bottom:6px">Points forts</div><ul style="list-style:none">${ptsFortsHtml}</ul></div>
+            <div><div class="slabel" style="margin-bottom:6px">Risques prioritaires</div><ul style="list-style:none">${risquesHtml}</ul></div>
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="slabel">Score par module</div>
+          <div class="module-grid">${modulesHtml}</div>
+        </div>
+
+        <div class="section-block">
+          <div class="slabel">Benchmarking secteur ${r.secteur||''}</div>
+          ${benchHtml}
+        </div>
+
+        <div class="metrics">
+          <div class="metric"><div class="val">${data?.accounts?.length??'—'}</div><div class="lbl">Comptes GL</div></div>
+          <div class="metric"><div class="val">${data?.customers?.length??'—'}</div><div class="lbl">Clients</div></div>
+          <div class="metric"><div class="val">${data?.vendors?.length??'—'}</div><div class="lbl">Fournisseurs</div></div>
+          <div class="metric"><div class="val">${data?.items?.length??'—'}</div><div class="lbl">Articles</div></div>
+          <div class="metric"><div class="val">${data?.fixedAssets?.length??'—'}</div><div class="lbl">Immobilisations</div></div>
+          <div class="metric"><div class="val" style="color:#E24B4A">${r.metrics?.alertes_critiques??'—'}</div><div class="lbl">Alertes</div></div>
+        </div>
+
+        <div class="section-block">
+          <div class="slabel">Analyse détaillée par module</div>
+          ${findingsHtml}
+        </div>
+
+        <div class="section-block">
+          <div class="slabel">Plan d'action priorisé</div>
+          ${planHtml}
+        </div>
+
       </div>
     </div>
     <div class="export-bar">
@@ -324,7 +634,8 @@ function renderReport(r,data){
       <button class="btn-sm" onclick="switchTab('dashboard')">Voir le dashboard →</button>
     </div>`;
 }
-function saveToHistory(r){const h=getHistory();h.unshift({id:Date.now(),date:new Date().toISOString(),score:r.score_global,societe:r.societe,environnement:r.environnement,synthese:r.synthese,sections:r.sections,metrics:r.metrics});if(h.length>20)h.pop();try{localStorage.setItem(SK,JSON.stringify(h))}catch{}}
+
+function saveToHistory(r){const h=getHistory();h.unshift({id:Date.now(),date:new Date().toISOString(),score:r.score_global,societe:r.societe,environnement:r.environnement,synthese:r.synthese,modules:r.modules,metrics:r.metrics,plan_action:r.plan_action,points_forts:r.points_forts,risques_prioritaires:r.risques_prioritaires});if(h.length>20)h.pop();try{localStorage.setItem(SK,JSON.stringify(h))}catch{}}
 function getHistory(){try{return JSON.parse(localStorage.getItem(SK)||'[]')}catch{return[]}}
 function clearHistory(){if(confirm('Effacer tout l\'historique ?')){localStorage.removeItem(SK);renderDashboard()}}
 function renderDashboard(){
@@ -332,11 +643,11 @@ function renderDashboard(){
   if(!h.length){document.getElementById('histList').innerHTML='<div class="empty">Aucun assessment enregistré.</div>';if(chart){chart.destroy();chart=null}return}
   const sorted=[...h].reverse();
   if(chart)chart.destroy();
-  const ctx=document.getElementById('scoreChart').getContext('2d');
-  chart=new Chart(ctx,{type:'line',data:{labels:sorted.map(x=>new Date(x.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})),datasets:[{label:'Score',data:sorted.map(x=>x.score),borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',borderWidth:2,pointBackgroundColor:'#378ADD',pointRadius:4,tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{font:{size:11},stepSize:25},grid:{color:'rgba(128,128,128,0.08)'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
-  document.getElementById('histList').innerHTML=h.map((x,i)=>{const prev=h[i+1];const trend=prev?x.score-prev.score:null;const th=trend===null?'':(trend>0?`<span class="trend-up">+${trend}</span>`:trend<0?`<span class="trend-dn">${trend}</span>`:'');return `<div class="hist-item" onclick="loadHist(${x.id})"><div class="hist-score"><span>${x.score}</span><small>/100</small></div><div class="hist-info"><div class="hist-title">${x.societe}</div><div class="hist-meta">${new Date(x.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})} · ${x.environnement} ${th}</div></div><button class="hist-del" onclick="event.stopPropagation();delHist(${x.id})">Suppr.</button></div>`;}).join('');
+  const ctx2=document.getElementById('scoreChart').getContext('2d');
+  chart=new Chart(ctx2,{type:'line',data:{labels:sorted.map(x=>new Date(x.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})),datasets:[{label:'Score',data:sorted.map(x=>x.score),borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',borderWidth:2,pointBackgroundColor:'#378ADD',pointRadius:4,tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{font:{size:11},stepSize:25},grid:{color:'rgba(128,128,128,0.08)'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  document.getElementById('histList').innerHTML=h.map((x,i)=>{const prev=h[i+1];const trend=prev?x.score-prev.score:null;const th=trend===null?'':(trend>0?`<span class="trend-up">+${trend}</span>`:trend<0?`<span class="trend-dn">${trend}</span>`:'');return `<div class="hist-item" onclick="loadHist(${x.id})"><div class="hist-score"><span>${x.score}</span><small>/100</small></div><div class="hist-info"><div class="hist-title">${x.societe}</div><div class="hist-meta">${new Date(x.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})} ${th}</div></div><button class="hist-del" onclick="event.stopPropagation();delHist(${x.id})">Suppr.</button></div>`;}).join('');
 }
-function loadHist(id){const h=getHistory().find(x=>x.id===id);if(!h)return;lastReport=h;bcData=null;renderReport(h,null);switchTab('assess')}
+function loadHist(id){const h=getHistory().find(x=>x.id===id);if(!h)return;lastReport=h;bcData=null;renderReport(h,{});switchTab('assess');goStep(4)}
 function delHist(id){const h=getHistory().filter(x=>x.id!==id);try{localStorage.setItem(SK,JSON.stringify(h))}catch{}renderDashboard()}
 function saveSched(){const s={monthly:document.getElementById('sched-monthly').checked,quarterly:document.getElementById('sched-quarterly').checked,weekly:document.getElementById('sched-weekly').checked,emails:document.getElementById('sched-emails').value,company:document.getElementById('sched-company').value};try{localStorage.setItem(SCHK,JSON.stringify(s))}catch{}renderSchedule()}
 function loadSched(){try{const s=JSON.parse(localStorage.getItem(SCHK)||'{}');if(s.monthly)document.getElementById('sched-monthly').checked=true;if(s.quarterly)document.getElementById('sched-quarterly').checked=true;if(s.weekly)document.getElementById('sched-weekly').checked=true;if(s.emails)document.getElementById('sched-emails').value=s.emails;if(s.company)document.getElementById('sched-company').value=s.company;}catch{}}
@@ -351,9 +662,7 @@ function renderSchedule(){
   document.getElementById('next-weekly').textContent=we?`Prochain : ${fmt(nw())}`:'Désactivé';
   const active=[];if(mo)active.push({freq:'Mensuel',date:nm()});if(qu)active.push({freq:'Trimestriel',date:nq()});if(we)active.push({freq:'Hebdomadaire',date:nw()});active.sort((a,b)=>a.date-b.date);
   document.getElementById('pendingList').innerHTML=active.length?active.map(a=>`<div class="sched-row"><span class="sched-freq">${a.freq}</span><span class="sched-next">Prochain : ${fmt(a.date)}</span></div>`).join(''):'<div class="empty" style="padding:1rem 0">Aucune planification active.</div>';
-  document.getElementById('sched-status').textContent=active.length?`${active.length} planification(s) active(s)`:''
 }
-function updateEmailPreview(r){if(!r)return;const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});document.getElementById('emailPreview').innerHTML=`<strong>${document.getElementById('emailSubject').value}</strong><br><br>Bonjour,<br><br>Rapport d'assessment ERP BC pour <strong>${r.societe}</strong> — ${now}.<br>Score global : <strong>${r.score_global}/100</strong><br>${r.synthese}`}
 async function sendEmail(){
   const btn=document.getElementById('sendEmailBtn'),statusEl=document.getElementById('emailStatus');
   const tid=getTID(),cid=document.getElementById('graphClientId').value.trim()||getCID(),sec=getSEC();
@@ -361,18 +670,17 @@ async function sendEmail(){
   if(!lastReport){statusEl.innerHTML=`<div class="error-msg">Générez d'abord un rapport.</div>`;return}
   if(!sender||!recipients){statusEl.innerHTML=`<div class="error-msg">Remplissez expéditeur et destinataires.</div>`;return}
   btn.disabled=true;btn.textContent='Envoi...';
-  statusEl.innerHTML=`<div class="status-bar"><div class="spinner"></div><span>Envoi via Graph API...</span></div>`;
   try{
     const r=await fetch('/api/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenantId:tid,clientId:cid,clientSecret:sec,scope:'https://graph.microsoft.com/.default'})});
     const td=await r.json();if(td.error)throw new Error(td.error);
     const toList=recipients.split(',').map(e=>({emailAddress:{address:e.trim()}}));
     const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-    const body=`<html><body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto"><div style="background:#185FA5;padding:20px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:18px">Rapport Assessment ERP BC</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px">${now}</p></div><div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px"><div style="background:#EFF6FF;border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:28px;font-weight:700;color:#185FA5">${lastReport.score_global}<span style="font-size:13px;color:#6B7280">/100</span></div><div style="font-weight:600">${lastReport.societe}</div></div><p style="line-height:1.7;font-size:13px">${lastReport.synthese}</p>${(lastReport.sections||[]).map(s=>`<div style="margin-top:14px"><h3 style="font-size:13px;font-weight:600;margin:0 0 7px">${s.titre} — ${s.score}/100</h3>${(s.findings||[]).map(f=>`<div style="font-size:12px;color:#4B5563;padding:3px 0 3px 10px;border-left:3px solid ${f.gravite==='critique'?'#EF4444':f.gravite==='attention'?'#F59E0B':'#3B82F6'};margin-bottom:3px">${f.texte}</div>`).join('')}</div>`).join('')}</div></body></html>`;
+    const body=`<html><body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto"><div style="background:#185FA5;padding:20px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:18px">Rapport Assessment ERP BC</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px">${now}</p></div><div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px"><div style="background:#EFF6FF;border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:28px;font-weight:700;color:#185FA5">${lastReport.score_global}<span style="font-size:13px;color:#6B7280">/100</span></div><div style="font-weight:600">${lastReport.societe}</div></div><p style="line-height:1.7;font-size:13px">${lastReport.synthese}</p>${(lastReport.modules||[]).map(m=>`<div style="margin-top:14px"><h3 style="font-size:13px;font-weight:600;margin:0 0 7px">${m.nom} — ${m.score}/100</h3>${(m.findings||[]).map(f=>`<div style="font-size:12px;color:#4B5563;padding:3px 0 3px 10px;border-left:3px solid ${f.gravite==='critique'?'#EF4444':f.gravite==='attention'?'#F59E0B':'#3B82F6'};margin-bottom:3px">${f.texte}</div>`).join('')}</div>`).join('')}</div></body></html>`;
     const mr=await fetch(`https://graph.microsoft.com/v1.0/users/${sender}/sendMail`,{method:'POST',headers:{Authorization:`Bearer ${td.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({message:{subject,body:{contentType:'HTML',content:body},toRecipients:toList},saveToSentItems:true})});
     if(!mr.ok){const e=await mr.json();throw new Error(e.error?.message||'Graph API '+mr.status)}
     statusEl.innerHTML=`<div style="background:var(--green-bg);border:0.5px solid #C0DD97;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--green)">Email envoyé à ${toList.length} destinataire(s) !</div>`;
   }catch(e){statusEl.innerHTML=`<div class="error-msg">Erreur : ${e.message}</div>`}
-  btn.disabled=false;btn.textContent='Envoyer le rapport par email';
+  btn.disabled=false;btn.textContent='Envoyer le rapport';
 }
 function exportPDF(){
   if(!lastReport||typeof window.jspdf==='undefined')return;
@@ -380,32 +688,35 @@ function exportPDF(){
     const{jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'}),W=210,M=18,CW=W-M*2;let y=0;
     const chk=n=>{if(y+n>275){doc.addPage();y=18}};
     doc.setFillColor(25,95,165);doc.rect(0,0,W,38,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('Rapport d\'assessment ERP',M,16);
-    doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text('Microsoft Business Central',M,23);
+    doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('Rapport Assessment ERP BC',M,16);
+    doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(`${lastReport.societe} — ${lastReport.secteur||''}`,M,23);
     doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})}`,M,30);
     doc.setFillColor(14,71,124);doc.rect(W-50,8,34,22,'F');
     doc.setTextColor(255,255,255);doc.setFontSize(20);doc.setFont('helvetica','bold');doc.text(`${lastReport.score_global}`,W-33,20,{align:'center'});
     doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text('/100',W-33,26,{align:'center'});y=48;
-    doc.setFillColor(245,247,250);doc.rect(M,y,CW,18,'F');
-    doc.setTextColor(60,60,60);doc.setFontSize(11);doc.setFont('helvetica','bold');doc.text(lastReport.societe,M+4,y+7);
-    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,100,100);doc.text(`Environnement : ${lastReport.environnement}`,M+4,y+14);y+=24;
-    const sl=doc.splitTextToSize(lastReport.synthese,CW);
-    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(70,70,70);doc.text(sl,M,y);y+=sl.length*4.5+8;
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(70,70,70);
+    const sl=doc.splitTextToSize(lastReport.synthese,CW);doc.text(sl,M,y);y+=sl.length*4.5+8;
+    if(lastReport.points_forts){chk(20);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);doc.text('Points forts',M,y);y+=5;lastReport.points_forts.forEach(p=>{chk(8);doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(70,70,70);const lines=doc.splitTextToSize('+ '+p,CW-4);doc.text(lines,M+2,y);y+=lines.length*4.5+2});y+=4}
+    if(lastReport.risques_prioritaires){chk(20);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(163,45,45);doc.text('Risques prioritaires',M,y);y+=5;lastReport.risques_prioritaires.forEach(p=>{chk(8);doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(70,70,70);const lines=doc.splitTextToSize('! '+p,CW-4);doc.text(lines,M+2,y);y+=lines.length*4.5+2});y+=4}
     const gc={critique:[163,45,45],attention:[133,79,11],bon:[24,95,165],excellent:[59,109,17]};
     const fc={critique:[226,75,74],attention:[239,159,39],info:[55,138,221],ok:[99,153,34]};
-    (lastReport.sections||[]).forEach(s=>{
+    (lastReport.modules||[]).forEach(s=>{
       chk(28);const nc=gc[s.niveau]||[24,95,165];
       doc.setFillColor(...nc);doc.rect(M,y,3,14,'F');
-      doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);doc.text(s.titre,M+6,y+7);
-      doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);doc.text(`Score : ${s.score}/100`,W-M-30,y+7);
+      doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);doc.text(s.nom,M+6,y+7);
+      doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);doc.text(`Score : ${s.score}/100 | Secteur : ${s.benchmark_secteur??65}/100`,W-M-60,y+7);
       y+=16;doc.setDrawColor(235,235,235);doc.line(M,y,W-M,y);y+=4;
       (s.findings||[]).forEach(f=>{
         const lines=doc.splitTextToSize(f.texte,CW-8);chk(lines.length*4.5+6);
         doc.setFillColor(...(fc[f.gravite]||[55,138,221]));doc.circle(M+2,y+2.5,1.5,'F');
-        doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(70,70,70);doc.text(lines,M+7,y+4);
-        y+=lines.length*4.5+3;
+        doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(70,70,70);doc.text(lines,M+7,y+4);y+=lines.length*4.5+2;
+        if(f.recommandation){const rlines=doc.splitTextToSize('→ '+f.recommandation,CW-12);chk(rlines.length*4+4);doc.setTextColor(24,95,165);doc.text(rlines,M+10,y+3);y+=rlines.length*4+3}
+        y+=1;
       });y+=8;
     });
+    if(lastReport.plan_action?.length){chk(20);doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);doc.text('Plan d\'action priorisé',M,y);y+=6;
+      lastReport.plan_action.slice(0,8).forEach((p,i)=>{chk(12);const pc=p.priorite==='haute'?[163,45,45]:p.priorite==='moyenne'?[133,79,11]:[59,109,17];doc.setFillColor(...pc);doc.circle(M+2,y+2,1.5,'F');doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...pc);doc.text(p.priorite.toUpperCase(),M+6,y+3);doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);const al=doc.splitTextToSize(p.action,CW-30);doc.text(al,M+24,y+3);doc.setTextColor(120,120,120);doc.text(`${p.delai} · ${p.module}`,W-M-40,y+3);y+=al.length*4.5+4});
+    }
     doc.setFillColor(245,247,250);doc.rect(0,285,W,12,'F');
     doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(140,140,140);
     doc.text(`Assessment ERP BC — ${lastReport.societe} — Confidentiel`,W/2,292,{align:'center'});
