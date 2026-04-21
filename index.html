@@ -133,6 +133,7 @@
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('assess')">Assessment</button>
+    <button class="tab" onclick="switchTab('kpi')">KPI</button>
     <button class="tab" onclick="switchTab('dashboard')">Dashboard</button>
     <button class="tab" onclick="switchTab('schedule')">Planification</button>
     <button class="tab" onclick="switchTab('email')">Email</button>
@@ -298,6 +299,11 @@
     <div id="resultArea" style="margin-top:1rem"></div>
   </div>
 
+  <!-- KPI -->
+  <div id="tab-kpi" class="panel">
+    <div id="kpiContent"><div class="empty" style="padding:3rem 0">Lancez un assessment pour voir les KPI ERP.</div></div>
+  </div>
+
   <!-- DASHBOARD -->
   <div id="tab-dashboard" class="panel">
     <div class="card"><div class="slabel">Évolution du score global</div><div class="chart-wrap"><canvas id="scoreChart"></canvas></div></div>
@@ -345,9 +351,9 @@
 <script>
 const SK='bc_assessment_history',SCHK='bc_assessment_schedule';
 let selTypes=new Set(['finance','achats','ventes','stock','immobilisations','securite']);
-let token=null,bcData=null,lastReport=null,chart=null,currentStep=1;
+let token=null,bcData=null,lastReport=null,lastKPI=null,chart=null,currentStep=1;
 
-function switchTab(n){document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['assess','dashboard','schedule','email'][i]===n));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+n).classList.add('active');if(n==='dashboard')renderDashboard();if(n==='schedule')renderSchedule()}
+function switchTab(n){document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['assess','kpi','dashboard','schedule','email'][i]===n));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+n).classList.add('active');if(n==='dashboard')renderDashboard();if(n==='schedule')renderSchedule();if(n==='kpi')renderKPI()}
 
 function goStep(n){
   currentStep=n;
@@ -409,6 +415,183 @@ async function testConnection(){
   document.getElementById('btnTestConn').disabled=false;document.getElementById('btnTestConn').textContent='Tester la connexion →';
 }
 
+
+
+// Calcul des KPI d'utilisation ERP
+function computeKPIs(data) {
+  const now = new Date();
+  const d30 = new Date(now - 30*24*3600*1000);
+  const d90 = new Date(now - 90*24*3600*1000);
+
+  // Helpers
+  const parseDate = s => s ? new Date(s) : null;
+  const daysBetween = (a,b) => a&&b ? Math.round(Math.abs(b-a)/(1000*3600*24)) : null;
+  const avg = arr => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 0;
+  const pct = (a,b) => b>0 ? Math.round(a/b*100) : 0;
+
+  // ── ADOPTION & UTILISATION ──
+  const users = data.users||[];
+  const totalUsers = users.length;
+  
+  // Activité sur 30 jours via écritures GL
+  const glEntries = data.glEntries||[];
+  const recentGL = glEntries.filter(e => parseDate(e.postingDate) > d30);
+  const activeUserIds = [...new Set(recentGL.map(e=>e.lastModifiedBy||e.userId).filter(Boolean))];
+  const adoptionRate = pct(activeUserIds.length, totalUsers||1);
+
+  // Fréquence de saisie
+  const dailySaisies = recentGL.length > 0 ? Math.round(recentGL.length / 30) : 0;
+
+  // Modules utilisés
+  const modulesUsed = {
+    finance: glEntries.length > 0,
+    achats: (data.purchaseOrders||[]).length > 0 || (data.purchaseInvoices||[]).length > 0,
+    ventes: (data.salesOrders||[]).length > 0 || (data.salesInvoices||[]).length > 0,
+    stock: (data.items||[]).length > 0 && (data.itemLedgerEntries||[]).length > 0,
+    immobilisations: (data.fixedAssets||[]).length > 0,
+    budget: (data.budgets||[]).length > 0,
+  };
+  const modulesActifs = Object.values(modulesUsed).filter(Boolean).length;
+  const tauxModules = pct(modulesActifs, Object.keys(modulesUsed).length);
+
+  // ── QUALITÉ DES DONNÉES ──
+  const customers = data.customers||[];
+  const vendors = data.vendors||[];
+  const items = data.items||[];
+
+  // Complétude fiches clients
+  const clientsComplets = customers.filter(c => c.email && c.phoneNumber && c.address).length;
+  const completudeClients = pct(clientsComplets, customers.length||1);
+
+  // Complétude fiches fournisseurs
+  const vendorsComplets = vendors.filter(v => v.email && v.address).length;
+  const completudeFournisseurs = pct(vendorsComplets, vendors.length||1);
+
+  // Complétude fiches articles
+  const itemsComplets = items.filter(i => i.description && i.unitPrice > 0 && i.baseUnitOfMeasure).length;
+  const completudeArticles = pct(itemsComplets, items.length||1);
+
+  // Taux données bloquées
+  const tauxClientsBloques = pct(customers.filter(c=>c.blocked).length, customers.length||1);
+  const tauxVendorsBloques = pct(vendors.filter(v=>v.blocked).length, vendors.length||1);
+  const tauxArticlesBloques = pct(items.filter(i=>i.blocked).length, items.length||1);
+
+  // ── FINANCE & COMPTABILITÉ ──
+  const salesInvoices = data.salesInvoices||[];
+  const purchaseInvoices = data.purchaseInvoices||[];
+  const customerPayments = data.customerPayments||[];
+  const vendorPayments = data.vendorPayments||[];
+  const creditMemos = data.salesCreditMemos||[];
+  const purchaseCreditMemos = data.purchaseCreditMemos||[];
+
+  // DSO — Délai moyen de paiement clients (jours)
+  const dsoSamples = salesInvoices
+    .filter(i => i.dueDate && i.invoiceDate && i.status === 'paid')
+    .slice(0,50)
+    .map(i => daysBetween(parseDate(i.invoiceDate), parseDate(i.dueDate)))
+    .filter(d => d !== null && d >= 0 && d < 365);
+  const dso = avg(dsoSamples) || null;
+
+  // DPO — Délai moyen de paiement fournisseurs
+  const dpoSamples = purchaseInvoices
+    .filter(i => i.dueDate && i.invoiceDate)
+    .slice(0,50)
+    .map(i => daysBetween(parseDate(i.invoiceDate), parseDate(i.dueDate)))
+    .filter(d => d !== null && d >= 0 && d < 365);
+  const dpo = avg(dpoSamples) || null;
+
+  // Taux d'extournes / avoirs (qualité saisie)
+  const tauxAvoirs = pct(creditMemos.length, salesInvoices.length||1);
+  const tauxAvoirsFourn = pct(purchaseCreditMemos.length, purchaseInvoices.length||1);
+
+  // Automatisation : factures avec PO associée
+  const invoicesWithPO = purchaseInvoices.filter(i => i.orderNumber || i.purchaseOrderNumber).length;
+  const tauxAutomatisationAchats = pct(invoicesWithPO, purchaseInvoices.length||1);
+
+  // ── VENTES & CRM ──
+  const salesOrders = data.salesOrders||[];
+  const salesShipments = data.salesShipments||[];
+
+  // Délai traitement commandes client (jours entre creation et shipment)
+  const delaiCmd = salesOrders
+    .filter(o => o.shipmentDate && o.orderDate)
+    .slice(0,30)
+    .map(o => daysBetween(parseDate(o.orderDate), parseDate(o.shipmentDate)))
+    .filter(d => d !== null && d >= 0 && d < 180);
+  const delaiMoyenCommande = avg(delaiCmd) || null;
+
+  // Commandes sans erreur (pas d'avoir associé)
+  const tauxCommandesSansErreur = Math.max(0, 100 - tauxAvoirs);
+
+  // ── STOCK ──
+  const itemLedger = data.itemLedgerEntries||[];
+  const recentItemMvt = itemLedger.filter(e => parseDate(e.postingDate) > d30);
+  const articlesActifs = [...new Set(recentItemMvt.map(e=>e.itemNumber).filter(Boolean))].length;
+  const tauxRotationStock = pct(articlesActifs, items.length||1);
+
+  // ── SCORE GLOBAL KPI ──
+  const scores = [
+    Math.min(100, adoptionRate),
+    Math.min(100, completudeClients),
+    Math.min(100, completudeFournisseurs),
+    Math.min(100, completudeArticles),
+    Math.min(100, tauxModules),
+    Math.max(0, 100 - tauxAvoirs * 3),
+    Math.min(100, tauxAutomatisationAchats),
+  ].filter(s => s > 0);
+  const scoreKPI = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 50;
+
+  return {
+    scoreKPI,
+    adoption: {
+      totalUsers,
+      activeUsers: activeUserIds.length,
+      adoptionRate,
+      dailySaisies,
+      modulesActifs,
+      tauxModules,
+      modulesUsed,
+    },
+    qualiteDonnees: {
+      completudeClients,
+      completudeFournisseurs,
+      completudeArticles,
+      tauxClientsBloques,
+      tauxVendorsBloques,
+      tauxArticlesBloques,
+      clientsComplets,
+      vendorsComplets,
+      itemsComplets,
+    },
+    finance: {
+      dso,
+      dpo,
+      tauxAvoirs,
+      tauxAvoirsFourn,
+      totalFacturesVente: salesInvoices.length,
+      totalFacturesAchat: purchaseInvoices.length,
+      totalPaiementsClients: customerPayments.length,
+      totalPaiementsFourn: vendorPayments.length,
+    },
+    achats: {
+      tauxAutomatisationAchats,
+      invoicesWithPO,
+      totalPurchaseInvoices: purchaseInvoices.length,
+    },
+    ventes: {
+      delaiMoyenCommande,
+      tauxCommandesSansErreur,
+      totalSalesOrders: salesOrders.length,
+      totalShipments: salesShipments.length,
+    },
+    stock: {
+      tauxRotationStock,
+      articlesActifs,
+      totalArticles: items.length,
+      mouvements30j: recentItemMvt.length,
+    },
+  };
+}
 
 // Analyse Ségrégation des Tâches
 function analyzeSoD(users, permissions) {
@@ -533,6 +716,18 @@ async function fetchBCData(cid){
     [`${baseAdmin}/api/v2.0/userPermissions?$top=500`,'userPermissions'],
     [`${baseAdmin}/api/v2.0/permissionSets?$top=200`,'permissionSets'],
   ];
+  // Endpoints KPI supplémentaires
+  const kpiEps=[
+    ['/api/v2.0/companies('+cid+')/salesInvoices?$top=200&$orderby=invoiceDate desc','salesInvoices'],
+    ['/api/v2.0/companies('+cid+')/purchaseInvoices?$top=200&$orderby=invoiceDate desc','purchaseInvoices'],
+    ['/api/v2.0/companies('+cid+')/salesCreditMemos?$top=100','salesCreditMemos'],
+    ['/api/v2.0/companies('+cid+')/purchaseCreditMemos?$top=100','purchaseCreditMemos'],
+    ['/api/v2.0/companies('+cid+')/customerPayments?$top=200&$orderby=postingDate desc','customerPayments'],
+    ['/api/v2.0/companies('+cid+')/vendorPayments?$top=200&$orderby=postingDate desc','vendorPayments'],
+    ['/api/v2.0/companies('+cid+')/salesShipments?$top=100','salesShipments'],
+    ['/api/v2.0/companies('+cid+')/itemLedgerEntries?$top=200','itemLedgerEntries'],
+    ['/api/v2.0/companies('+cid+')/budgets?$top=50','budgets'],
+  ];
   const r={};
   for(const[p,k]of eps){try{const d=await bcGet(p);r[k]=d.value||[]}catch{r[k]=[]}}
   // Collecte sécurité
@@ -542,8 +737,12 @@ async function fetchBCData(cid){
       const d=await resp.json();r[k]=d.value||[];
     }catch{r[k]=[]}
   }
-  // Analyse SOD (Ségrégation des tâches) - détection conflits de droits
+  // Analyse SOD
   r.sodAnalysis = analyzeSoD(r.users||[], r.userPermissions||[]);
+  // Collecte KPI
+  for(const[p,k]of kpiEps){try{const d=await bcGet(p);r[k]=d.value||[]}catch{r[k]=[]}}
+  // Calcul KPI
+  r.kpiAnalysis = computeKPIs(r);
   return r;
 }
 
@@ -564,6 +763,44 @@ function buildPrompt(name,env,types,data,ctx){
   };
   const modulesList=[...types].join(', ');
   const sod=data.sodAnalysis||{};
+  const kpi=data.kpiAnalysis||{};
+  const kpiSummary={
+    score_kpi: kpi.scoreKPI||0,
+    adoption: {
+      taux_adoption_utilisateurs: (kpi.adoption?.adoptionRate||0)+'%',
+      utilisateurs_actifs_30j: kpi.adoption?.activeUsers||0,
+      total_utilisateurs: kpi.adoption?.totalUsers||0,
+      saisies_par_jour: kpi.adoption?.dailySaisies||0,
+      modules_actifs: kpi.adoption?.modulesActifs||0,
+      taux_modules_utilises: (kpi.adoption?.tauxModules||0)+'%',
+    },
+    qualite_donnees: {
+      completude_fiches_clients: (kpi.qualiteDonnees?.completudeClients||0)+'%',
+      completude_fiches_fournisseurs: (kpi.qualiteDonnees?.completudeFournisseurs||0)+'%',
+      completude_fiches_articles: (kpi.qualiteDonnees?.completudeArticles||0)+'%',
+      taux_clients_bloques: (kpi.qualiteDonnees?.tauxClientsBloques||0)+'%',
+      taux_articles_bloques: (kpi.qualiteDonnees?.tauxArticlesBloques||0)+'%',
+    },
+    finance: {
+      dso_jours: kpi.finance?.dso||'N/A',
+      dpo_jours: kpi.finance?.dpo||'N/A',
+      taux_avoirs_vente: (kpi.finance?.tauxAvoirs||0)+'%',
+      taux_avoirs_achat: (kpi.finance?.tauxAvoirsFourn||0)+'%',
+      total_factures_vente: kpi.finance?.totalFacturesVente||0,
+      total_factures_achat: kpi.finance?.totalFacturesAchat||0,
+    },
+    achats: {
+      taux_automatisation_3way_match: (kpi.achats?.tauxAutomatisationAchats||0)+'%',
+    },
+    ventes: {
+      delai_moyen_commande_jours: kpi.ventes?.delaiMoyenCommande||'N/A',
+      taux_commandes_sans_erreur: (kpi.ventes?.tauxCommandesSansErreur||0)+'%',
+    },
+    stock: {
+      taux_rotation_actifs_30j: (kpi.stock?.tauxRotationStock||0)+'%',
+      mouvements_30j: kpi.stock?.mouvements30j||0,
+    },
+  };
   const secSummary={
     total_utilisateurs:sod.totalUsers||0,
     utilisateurs_SUPER:(sod.superUsers||[]).map(u=>u.name),
@@ -587,6 +824,9 @@ RÉPONSES CONSULTANT PRÉ-AUDIT:
 
 DONNÉES RÉELLES EXTRAITES DE BC:
 ${JSON.stringify(s,null,2)}
+
+KPI D'UTILISATION ERP:
+${JSON.stringify(kpiSummary,null,2)}
 
 ANALYSE SÉCURITÉ & SOD (Ségrégation des Tâches):
 ${JSON.stringify(secSummary,null,2)}
@@ -799,6 +1039,7 @@ function renderReport(r,data){
     </div>
     <div class="export-bar">
       <button class="btn-sm" onclick="exportPDF()">Exporter PDF</button>
+      <button class="btn-sm" onclick="switchTab('kpi')">Voir les KPI →</button>
       <button class="btn-sm" onclick="switchTab('email')">Envoyer par email →</button>
       <button class="btn-sm" onclick="switchTab('dashboard')">Voir le dashboard →</button>
     </div>`;
@@ -807,6 +1048,90 @@ function renderReport(r,data){
 function saveToHistory(r){const h=getHistory();h.unshift({id:Date.now(),date:new Date().toISOString(),score:r.score_global,societe:r.societe,environnement:r.environnement,synthese:r.synthese,modules:r.modules,metrics:r.metrics,plan_action:r.plan_action,points_forts:r.points_forts,risques_prioritaires:r.risques_prioritaires});if(h.length>20)h.pop();try{localStorage.setItem(SK,JSON.stringify(h))}catch{}}
 function getHistory(){try{return JSON.parse(localStorage.getItem(SK)||'[]')}catch{return[]}}
 function clearHistory(){if(confirm('Effacer tout l\'historique ?')){localStorage.removeItem(SK);renderDashboard()}}
+
+function renderKPI() {
+  const el = document.getElementById('kpiContent');
+  if (!lastReport || !lastKPI) {
+    el.innerHTML = '<div class="empty" style="padding:3rem 0">Lancez un assessment pour voir les KPI ERP.</div>';
+    return;
+  }
+  const k = lastKPI;
+  const pct = v => v !== null && v !== undefined && v !== 'N/A' ? v+'%' : 'N/A';
+  const val = v => v !== null && v !== undefined ? v : '—';
+  const scoreColor = s => s>=80?'#639922':s>=60?'#378ADD':s>=40?'#EF9F27':'#E24B4A';
+  const bar = (v, max=100, color) => {
+    const pv = Math.min(100, Math.round(v/max*100));
+    const c = color || scoreColor(pv);
+    return `<div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${pv}%;background:${c};border-radius:3px;transition:width .6s"></div></div>`;
+  };
+
+  const kpiCard = (icon, title, items) => `
+    <div class="card" style="margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="font-size:16px">${icon}</span>
+        <div class="slabel" style="margin:0">${title}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">
+        ${items.map(item => `
+          <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:4px">${item.label}</div>
+            <div style="font-size:20px;font-weight:700;color:${item.color||'var(--text)'}">
+              ${item.value}${item.unit?'<span style="font-size:12px;font-weight:400;color:var(--text2);margin-left:2px">'+item.unit+'</span>':''}
+            </div>
+            ${item.bar !== undefined ? bar(item.bar, item.barMax||100, item.color) : ''}
+            ${item.sub ? '<div style="font-size:10px;color:var(--text3);margin-top:3px">'+item.sub+'</div>' : ''}
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div>
+        <div style="font-size:16px;font-weight:600;color:var(--text)">KPI d\'utilisation ERP</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">${lastReport.societe} · ${new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      </div>
+      <div style="text-align:center;background:var(--blue-bg);border-radius:var(--radius-sm);padding:8px 16px">
+        <div style="font-size:22px;font-weight:700;color:var(--blue-dark)">${k.scoreKPI||'—'}</div>
+        <div style="font-size:10px;color:var(--blue-mid)">Score KPI /100</div>
+      </div>
+    </div>
+
+    ${kpiCard('👥', 'Adoption & Utilisation', [
+      {label:"Taux d'adoption", value: pct(k.adoption?.adoptionRate), bar: k.adoption?.adoptionRate||0, color: scoreColor(k.adoption?.adoptionRate||0), sub: (k.adoption?.activeUsers||0)+' actifs / '+(k.adoption?.totalUsers||0)+' total'},
+      {label:'Saisies / jour', value: val(k.adoption?.dailySaisies), unit:'écriture(s)', sub:'sur les 30 derniers jours'},
+      {label:'Modules actifs', value: (k.adoption?.modulesActifs||0)+' / '+6, bar: k.adoption?.tauxModules||0, color:'#378ADD', sub: pct(k.adoption?.tauxModules)+' utilisés'},
+    ])}
+
+    ${kpiCard('📋', 'Qualité des données maîtres', [
+      {label:'Fiches clients', value: pct(k.qualiteDonnees?.completudeClients), bar: k.qualiteDonnees?.completudeClients||0, color: scoreColor(k.qualiteDonnees?.completudeClients||0), sub: (k.qualiteDonnees?.clientsComplets||0)+' complètes'},
+      {label:'Fiches fournisseurs', value: pct(k.qualiteDonnees?.completudeFournisseurs), bar: k.qualiteDonnees?.completudeFournisseurs||0, color: scoreColor(k.qualiteDonnees?.completudeFournisseurs||0), sub: (k.qualiteDonnees?.vendorsComplets||0)+' complètes'},
+      {label:'Fiches articles', value: pct(k.qualiteDonnees?.completudeArticles), bar: k.qualiteDonnees?.completudeArticles||0, color: scoreColor(k.qualiteDonnees?.completudeArticles||0), sub: (k.qualiteDonnees?.itemsComplets||0)+' complètes'},
+      {label:'Clients bloqués', value: pct(k.qualiteDonnees?.tauxClientsBloques), bar: k.qualiteDonnees?.tauxClientsBloques||0, color: (k.qualiteDonnees?.tauxClientsBloques||0)>10?'#E24B4A':'#639922'},
+      {label:'Articles bloqués', value: pct(k.qualiteDonnees?.tauxArticlesBloques), bar: k.qualiteDonnees?.tauxArticlesBloques||0, color: (k.qualiteDonnees?.tauxArticlesBloques||0)>5?'#E24B4A':'#639922'},
+    ])}
+
+    ${kpiCard('💰', 'Finance & Comptabilité', [
+      {label:'DSO (recouvrement)', value: k.finance?.dso||'—', unit: k.finance?.dso?'jours':'', color: k.finance?.dso>45?'#E24B4A':k.finance?.dso>30?'#EF9F27':'#639922', sub: 'Délai paiement clients'},
+      {label:'DPO (fournisseurs)', value: k.finance?.dpo||'—', unit: k.finance?.dpo?'jours':'', color:'var(--text)', sub: 'Délai paiement fourn.'},
+      {label:'Taux avoirs vente', value: pct(k.finance?.tauxAvoirs), bar: k.finance?.tauxAvoirs||0, barMax:20, color: (k.finance?.tauxAvoirs||0)>10?'#E24B4A':'#639922', sub: 'Qualité facturation'},
+      {label:'Factures vente', value: val(k.finance?.totalFacturesVente), sub:'total traité'},
+      {label:'Factures achat', value: val(k.finance?.totalFacturesAchat), sub:'total traité'},
+    ])}
+
+    ${kpiCard('🛒', 'Achats & Automatisation', [
+      {label:'3-Way Match auto', value: pct(k.achats?.tauxAutomatisationAchats), bar: k.achats?.tauxAutomatisationAchats||0, color: scoreColor(k.achats?.tauxAutomatisationAchats||0), sub: 'Factures liées à une commande'},
+      {label:'Avoirs fournisseurs', value: pct(k.finance?.tauxAvoirsFourn), bar: k.finance?.tauxAvoirsFourn||0, barMax:20, color:(k.finance?.tauxAvoirsFourn||0)>10?'#E24B4A':'#639922', sub: 'Qualité réception'},
+    ])}
+
+    ${kpiCard('📦', 'Ventes & Stock', [
+      {label:'Délai traitement cmde', value: k.ventes?.delaiMoyenCommande||'—', unit: k.ventes?.delaiMoyenCommande?'jours':'', color: k.ventes?.delaiMoyenCommande>7?'#EF9F27':'#639922', sub: 'Commande → expédition'},
+      {label:'Cmdes sans erreur', value: pct(k.ventes?.tauxCommandesSansErreur), bar: k.ventes?.tauxCommandesSansErreur||0, color: scoreColor(k.ventes?.tauxCommandesSansErreur||0)},
+      {label:'Rotation stock 30j', value: pct(k.stock?.tauxRotationStock), bar: k.stock?.tauxRotationStock||0, color:'#378ADD', sub: (k.stock?.articlesActifs||0)+' articles actifs'},
+      {label:'Mouvements stock', value: val(k.stock?.mouvements30j), unit:'mvt', sub:'sur 30 jours'},
+    ])}
+  `;
+}
+
 function renderDashboard(){
   const h=getHistory();
   if(!h.length){document.getElementById('histList').innerHTML='<div class="empty">Aucun assessment enregistré.</div>';if(chart){chart.destroy();chart=null}return}
