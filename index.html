@@ -563,6 +563,16 @@ function buildPrompt(name,env,types,data,ctx){
     comptes_bloques:data.accounts?.filter(a=>a.blocked).length??0,
   };
   const modulesList=[...types].join(', ');
+  const sod=data.sodAnalysis||{};
+  const secSummary={
+    total_utilisateurs:sod.totalUsers||0,
+    utilisateurs_SUPER:(sod.superUsers||[]).map(u=>u.name),
+    nb_conflits_SOD_critiques:(sod.conflictsFound||[]).filter(c=>c.gravite==='critique').length,
+    nb_conflits_SOD_attention:(sod.conflictsFound||[]).filter(c=>c.gravite==='attention').length,
+    conflits_details:(sod.conflictsFound||[]).map(c=>c.userName+': '+c.label+' ('+c.gravite+')'),
+    utilisateurs_avec_conflits:sod.usersWithConflicts||[],
+    score_risque_securite:sod.riskScore||0,
+  };
   return `Tu es un expert ERP Microsoft Business Central certifié avec 15 ans d'expérience dans les PME européennes. Génère un rapport d'assessment COMPLET et DÉTAILLÉ.
 
 SOCIÉTÉ: ${name} | ENVIRONNEMENT: ${env} | VERSION: ${ctx.version}
