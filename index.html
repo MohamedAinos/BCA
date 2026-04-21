@@ -121,14 +121,75 @@
     .step-line{flex:1;height:1px;background:var(--border)}
     .step-label{font-size:11px;color:var(--text2);text-align:center;margin-top:3px}
     .wizard-step{display:none}.wizard-step.active{display:block}
+
+    .auth-overlay{position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+    .auth-box{background:var(--bg);border:0.5px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:400px}
+    .auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;justify-content:center}
+    .auth-logo-icon{width:44px;height:44px;background:var(--blue);border-radius:11px;display:flex;align-items:center;justify-content:center}
+    .auth-logo-icon svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round}
+    .auth-title{font-size:22px;font-weight:700;color:var(--text);text-align:center;margin-bottom:4px}
+    .auth-sub{font-size:13px;color:var(--text2);text-align:center;margin-bottom:1.5rem}
+    .auth-tabs{display:flex;gap:4px;background:var(--bg2);padding:4px;border-radius:8px;margin-bottom:1.25rem}
+    .auth-tab{flex:1;padding:7px;border:none;background:none;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all .15s}
+    .auth-tab.active{background:var(--bg);color:var(--text);font-weight:500;border:0.5px solid var(--border)}
+    .auth-field{margin-bottom:12px}
+    .auth-field label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
+    .auth-btn{width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:opacity .15s;margin-top:4px}
+    .auth-btn:hover{opacity:.85}.auth-btn:disabled{opacity:.4;cursor:not-allowed}
+    .auth-error{background:var(--red-bg);border:0.5px solid #F09595;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--red);margin-top:10px;line-height:1.5}
+    .auth-success{background:var(--green-bg);border:0.5px solid #C0DD97;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--green);margin-top:10px}
+    .user-bar{display:flex;align-items:center;gap:10px;background:var(--bg2);border-radius:8px;padding:8px 12px;margin-bottom:1rem;font-size:13px}
+    .user-avatar{width:28px;height:28px;border-radius:50%;background:var(--blue-bg);color:var(--blue-dark);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+    .save-creds-btn{font-size:11px;padding:4px 10px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg);cursor:pointer;color:var(--text2);font-family:var(--font)}
+    .save-creds-btn:hover{background:var(--green-bg);color:var(--green);border-color:#C0DD97}
     @media(max-width:500px){.grid2{grid-template-columns:1fr}.type-grid{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body>
-<div class="page">
+
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-icon"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg></div>
+    </div>
+    <div class="auth-title">BC Assessment</div>
+    <div class="auth-sub">Votre outil d'audit ERP Business Central</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Se connecter</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Créer un compte</button>
+    </div>
+    <div id="loginForm">
+      <div class="auth-field"><label>Email</label><input type="email" id="loginEmail" placeholder="vous@societe.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <div class="auth-field"><label>Mot de passe</label><input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="auth-btn" id="loginBtn" onclick="doLogin()">Se connecter</button>
+      <div id="loginMsg"></div>
+    </div>
+    <div id="signupForm" style="display:none">
+      <div class="auth-field"><label>Email</label><input type="email" id="signupEmail" placeholder="vous@societe.com"/></div>
+      <div class="auth-field"><label>Mot de passe <span style="color:var(--text3)">(8 caractères min)</span></label><input type="password" id="signupPassword" placeholder="••••••••"/></div>
+      <div class="auth-field"><label>Confirmer le mot de passe</label><input type="password" id="signupConfirm" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignup()"/></div>
+      <button class="auth-btn" id="signupBtn" onclick="doSignup()">Créer mon compte</button>
+      <div id="signupMsg"></div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="mainApp" style="display:none">
   <div class="logo">
     <div class="logo-icon"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg></div>
     <div><div class="logo-text">BC Assessment</div><div class="logo-sub">Business Central · Powered by AI · PME Edition</div></div>
+  </div>
+
+  <!-- Barre utilisateur -->
+  <div class="user-bar" id="userBar" style="display:none">
+    <div class="user-avatar" id="userAvatar">?</div>
+    <div style="flex:1">
+      <div style="font-weight:500;color:var(--text);font-size:13px" id="userEmail">—</div>
+      <div style="font-size:11px;color:var(--text2)" id="userStatus">Connecté</div>
+    </div>
+    <button class="save-creds-btn" onclick="saveCredentials()" id="saveCreds" title="Sauvegarder les identifiants BC">Sauvegarder BC</button>
+    <button class="btn-sm" style="font-size:11px" onclick="doLogout()">Déconnexion</button>
   </div>
 
   <div class="tabs">
@@ -349,6 +410,150 @@
 
 <!-- v20260421_084711 -->
 <script>
+
+// ── AUTH ──────────────────────────────────────────────
+let currentUser = null;
+let authToken = null;
+
+function switchAuthTab(tab) {
+  document.getElementById('loginForm').style.display = tab==='login'?'block':'none';
+  document.getElementById('signupForm').style.display = tab==='signup'?'block':'none';
+  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+  document.getElementById('tabSignup').classList.toggle('active', tab==='signup');
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+  const msg = document.getElementById('loginMsg');
+  if (!email || !password) { msg.innerHTML='<div class="auth-error">Remplissez email et mot de passe</div>'; return; }
+  btn.disabled=true; btn.textContent='Connexion...'; msg.innerHTML='';
+  try {
+    const r = await fetch('/api/auth', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'login',email,password}) });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    authToken = d.access_token;
+    currentUser = d.user || { email };
+    onLoginSuccess(email);
+  } catch(e) {
+    msg.innerHTML=`<div class="auth-error">${e.message}</div>`;
+  }
+  btn.disabled=false; btn.textContent='Se connecter';
+}
+
+async function doSignup() {
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const confirm = document.getElementById('signupConfirm').value;
+  const btn = document.getElementById('signupBtn');
+  const msg = document.getElementById('signupMsg');
+  if (!email || !password) { msg.innerHTML='<div class="auth-error">Remplissez tous les champs</div>'; return; }
+  if (password.length < 8) { msg.innerHTML='<div class="auth-error">Mot de passe trop court (8 caractères min)</div>'; return; }
+  if (password !== confirm) { msg.innerHTML='<div class="auth-error">Les mots de passe ne correspondent pas</div>'; return; }
+  btn.disabled=true; btn.textContent='Création...'; msg.innerHTML='';
+  try {
+    const r = await fetch('/api/auth', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'signup',email,password}) });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    if (d.access_token) {
+      authToken = d.access_token;
+      currentUser = d.user || { email };
+      onLoginSuccess(email);
+    } else {
+      msg.innerHTML='<div class="auth-success">Compte créé ! Vérifiez votre email pour confirmer, puis connectez-vous.</div>';
+      setTimeout(() => switchAuthTab('login'), 3000);
+    }
+  } catch(e) {
+    msg.innerHTML=`<div class="auth-error">${e.message}</div>`;
+  }
+  btn.disabled=false; btn.textContent='Créer mon compte';
+}
+
+async function doLogout() {
+  if (authToken) {
+    try { await fetch('/api/auth', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'logout',token:authToken}) }); } catch(e) {}
+  }
+  authToken = null; currentUser = null;
+  localStorage.removeItem('bc_auth_token');
+  localStorage.removeItem('bc_auth_email');
+  document.getElementById('authOverlay').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('userBar').style.display = 'none';
+}
+
+function onLoginSuccess(email) {
+  localStorage.setItem('bc_auth_token', authToken);
+  localStorage.setItem('bc_auth_email', email);
+  document.getElementById('authOverlay').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('userBar').style.display = 'flex';
+  const initials = email.substring(0,2).toUpperCase();
+  document.getElementById('userAvatar').textContent = initials;
+  document.getElementById('userEmail').textContent = email;
+  document.getElementById('userStatus').textContent = 'Espace sécurisé · BC Assessment';
+  loadProfile();
+}
+
+async function loadProfile() {
+  if (!authToken) return;
+  try {
+    const r = await fetch('/api/profile', { headers:{ 'Authorization': `Bearer ${authToken}` } });
+    const d = await r.json();
+    if (d.profile) {
+      // Pré-remplir les identifiants BC sauvegardés
+      if (d.profile.tenant_id) document.getElementById('tenantId').value = d.profile.tenant_id;
+      if (d.profile.client_id) document.getElementById('clientId').value = d.profile.client_id;
+      if (d.profile.client_secret) document.getElementById('clientSecret').value = d.profile.client_secret;
+      if (d.profile.env_name) document.getElementById('envName').value = d.profile.env_name;
+      document.getElementById('userStatus').textContent = 'Identifiants BC chargés ✓';
+      setTimeout(() => { document.getElementById('userStatus').textContent = 'Espace sécurisé · BC Assessment'; }, 2500);
+    }
+  } catch(e) { console.error('Profile load error:', e); }
+}
+
+async function saveCredentials() {
+  if (!authToken) return;
+  const btn = document.getElementById('saveCreds');
+  btn.textContent = 'Sauvegarde...'; btn.disabled = true;
+  try {
+    const r = await fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenantId: document.getElementById('tenantId').value.trim(),
+        clientId: document.getElementById('clientId').value.trim(),
+        clientSecret: document.getElementById('clientSecret').value.trim(),
+        envName: document.getElementById('envName').value.trim(),
+      })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    btn.textContent = 'Sauvegardé ✓';
+    btn.style.background = 'var(--green-bg)';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = '#C0DD97';
+    setTimeout(() => {
+      btn.textContent = 'Sauvegarder BC';
+      btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+      btn.disabled = false;
+    }, 2000);
+    return;
+  } catch(e) { alert('Erreur: ' + e.message); }
+  btn.textContent = 'Sauvegarder BC'; btn.disabled = false;
+}
+
+// Auto-login si token en localStorage
+function checkAutoLogin() {
+  const token = localStorage.getItem('bc_auth_token');
+  const email = localStorage.getItem('bc_auth_email');
+  if (token && email) {
+    authToken = token;
+    onLoginSuccess(email);
+  }
+}
+
+// ── FIN AUTH ──────────────────────────────────────────
 const SK='bc_assessment_history',SCHK='bc_assessment_schedule';
 let selTypes=new Set(['finance','achats','ventes','stock','immobilisations','securite']);
 let token=null,bcData=null,lastReport=null,lastKPI=null,chart=null,currentStep=1;
@@ -1352,6 +1557,7 @@ function exportPDF(){
   }catch(e){console.error(e)}
 }
 loadSched();
+checkAutoLogin();
 </script>
 </body>
 </html>
