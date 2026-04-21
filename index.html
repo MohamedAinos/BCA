@@ -529,6 +529,43 @@ function computeKPIs(data) {
   const articlesActifs = [...new Set(recentItemMvt.map(e=>e.itemNumber).filter(Boolean))].length;
   const tauxRotationStock = pct(articlesActifs, items.length||1);
 
+  // Calcul stock par article via cumul des mouvements
+  const stockParArticle = {};
+  itemLedger.forEach(e => {
+    const id = e.itemNumber || e.number;
+    if (!id) return;
+    if (!stockParArticle[id]) {
+      stockParArticle[id] = {
+        numero: id,
+        description: e.description || e.itemDescription || id,
+        quantite: 0,
+        dernierMouvement: null,
+        uniteMesure: e.unitOfMeasureCode || '',
+      };
+    }
+    const qty = parseFloat(e.quantity) || 0;
+    stockParArticle[id].quantite += qty;
+    if (!stockParArticle[id].dernierMouvement || parseDate(e.postingDate) > parseDate(stockParArticle[id].dernierMouvement)) {
+      stockParArticle[id].dernierMouvement = e.postingDate;
+    }
+  });
+
+  // Articles avec stock négatif
+  const articlesStockNegatif = Object.values(stockParArticle)
+    .filter(a => a.quantite < 0)
+    .sort((a,b) => a.quantite - b.quantite); // Du plus négatif au moins
+
+  // Articles avec stock zéro mais actifs (mouvements récents)
+  const articlesStockZeroActifs = Object.values(stockParArticle)
+    .filter(a => a.quantite === 0 && recentItemMvt.some(e => (e.itemNumber||e.number) === a.numero));
+
+  // Articles sans mouvement depuis 90 jours (stock dormant)
+  const articlesStockDormant = Object.values(stockParArticle)
+    .filter(a => a.quantite > 0 && (!a.dernierMouvement || parseDate(a.dernierMouvement) < d90));
+
+  // Valeur totale des articles (si unitCost disponible)
+  const stockNegatifTotal = articlesStockNegatif.reduce((sum,a) => sum + a.quantite, 0);
+
   // ── SCORE GLOBAL KPI ──
   const scores = [
     Math.min(100, adoptionRate),
@@ -589,6 +626,13 @@ function computeKPIs(data) {
       articlesActifs,
       totalArticles: items.length,
       mouvements30j: recentItemMvt.length,
+      articlesStockNegatif,
+      nbStockNegatif: articlesStockNegatif.length,
+      stockNegatifTotal: Math.round(stockNegatifTotal * 100) / 100,
+      articlesStockDormant,
+      nbStockDormant: articlesStockDormant.length,
+      nbStockZeroActifs: articlesStockZeroActifs.length,
+      tauxPrecisionStock: Math.max(0, 100 - pct(articlesStockNegatif.length, Object.keys(stockParArticle).length||1)),
     },
   };
 }
@@ -725,8 +769,9 @@ async function fetchBCData(cid){
     ['/api/v2.0/companies('+cid+')/customerPayments?$top=200&$orderby=postingDate desc','customerPayments'],
     ['/api/v2.0/companies('+cid+')/vendorPayments?$top=200&$orderby=postingDate desc','vendorPayments'],
     ['/api/v2.0/companies('+cid+')/salesShipments?$top=100','salesShipments'],
-    ['/api/v2.0/companies('+cid+')/itemLedgerEntries?$top=200','itemLedgerEntries'],
+    ['/api/v2.0/companies('+cid+')/itemLedgerEntries?$top=500&$orderby=postingDate desc','itemLedgerEntries'],
     ['/api/v2.0/companies('+cid+')/budgets?$top=50','budgets'],
+    ['/api/v2.0/companies('+cid+')/inventoryPostingGroups?$top=50','inventoryPostingGroups'],
   ];
   const r={};
   for(const[p,k]of eps){try{const d=await bcGet(p);r[k]=d.value||[]}catch{r[k]=[]}}
@@ -799,6 +844,11 @@ function buildPrompt(name,env,types,data,ctx){
     stock: {
       taux_rotation_actifs_30j: (kpi.stock?.tauxRotationStock||0)+'%',
       mouvements_30j: kpi.stock?.mouvements30j||0,
+      nb_articles_stock_negatif: kpi.stock?.nbStockNegatif||0,
+      articles_stock_negatif: (kpi.stock?.articlesStockNegatif||[]).slice(0,10).map(a=>a.numero+' ('+a.description+'): '+a.quantite+' '+a.uniteMesure),
+      total_quantite_negative: kpi.stock?.stockNegatifTotal||0,
+      nb_articles_stock_dormant_90j: kpi.stock?.nbStockDormant||0,
+      taux_precision_stock: (kpi.stock?.tauxPrecisionStock||100)+'%',
     },
   };
   const secSummary={
@@ -1124,12 +1174,95 @@ function renderKPI() {
       {label:'Avoirs fournisseurs', value: pct(k.finance?.tauxAvoirsFourn), bar: k.finance?.tauxAvoirsFourn||0, barMax:20, color:(k.finance?.tauxAvoirsFourn||0)>10?'#E24B4A':'#639922', sub: 'Qualité réception'},
     ])}
 
-    ${kpiCard('📦', 'Ventes & Stock', [
+    ${kpiCard('📦', 'Ventes & Commandes', [
       {label:'Délai traitement cmde', value: k.ventes?.delaiMoyenCommande||'—', unit: k.ventes?.delaiMoyenCommande?'jours':'', color: k.ventes?.delaiMoyenCommande>7?'#EF9F27':'#639922', sub: 'Commande → expédition'},
       {label:'Cmdes sans erreur', value: pct(k.ventes?.tauxCommandesSansErreur), bar: k.ventes?.tauxCommandesSansErreur||0, color: scoreColor(k.ventes?.tauxCommandesSansErreur||0)},
-      {label:'Rotation stock 30j', value: pct(k.stock?.tauxRotationStock), bar: k.stock?.tauxRotationStock||0, color:'#378ADD', sub: (k.stock?.articlesActifs||0)+' articles actifs'},
-      {label:'Mouvements stock', value: val(k.stock?.mouvements30j), unit:'mvt', sub:'sur 30 jours'},
     ])}
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">📦</span>
+          <div class="slabel" style="margin:0">Stock & Inventaire</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="tag ${(k.stock?.nbStockNegatif||0)>0?'tag-crit':'tag-ok'}">${(k.stock?.nbStockNegatif||0)>0?(k.stock.nbStockNegatif)+' stock(s) négatif(s)':'Aucun stock négatif'}</span>
+          <span class="tag tag-info">${k.stock?.tauxPrecisionStock||100}% précision</span>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:${(k.stock?.nbStockNegatif||0)>0||k.stock?.nbStockDormant>0?'14px':'0'}">
+        <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Rotation stock 30j</div>
+          <div style="font-size:20px;font-weight:700;color:#378ADD">${pct(k.stock?.tauxRotationStock)}</div>
+          <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${k.stock?.tauxRotationStock||0}%;background:#378ADD;border-radius:3px"></div></div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">${k.stock?.articlesActifs||0} articles actifs</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Mouvements 30j</div>
+          <div style="font-size:20px;font-weight:700;color:var(--text)">${val(k.stock?.mouvements30j)}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">entrées + sorties</div>
+        </div>
+        <div style="background:${(k.stock?.nbStockNegatif||0)>0?'var(--red-bg)':'var(--bg2)'};border-radius:var(--radius-sm);padding:10px 12px;border:0.5px solid ${(k.stock?.nbStockNegatif||0)>0?'#F09595':'var(--border)'}">
+          <div style="font-size:11px;color:${(k.stock?.nbStockNegatif||0)>0?'var(--red)':'var(--text2)'};margin-bottom:4px">Articles stock négatif</div>
+          <div style="font-size:20px;font-weight:700;color:${(k.stock?.nbStockNegatif||0)>0?'var(--red)':'#639922'}">${k.stock?.nbStockNegatif||0}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">Qté totale: ${k.stock?.stockNegatifTotal||0}</div>
+        </div>
+        <div style="background:${(k.stock?.nbStockDormant||0)>0?'var(--amber-bg)':'var(--bg2)'};border-radius:var(--radius-sm);padding:10px 12px">
+          <div style="font-size:11px;color:${(k.stock?.nbStockDormant||0)>0?'var(--amber)':'var(--text2)'};margin-bottom:4px">Stock dormant +90j</div>
+          <div style="font-size:20px;font-weight:700;color:${(k.stock?.nbStockDormant||0)>0?'var(--amber)':'#639922'}">${k.stock?.nbStockDormant||0}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">sans mouvement</div>
+        </div>
+      </div>
+
+      ${(k.stock?.articlesStockNegatif||[]).length>0?`
+        <div style="margin-top:4px">
+          <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></span>
+            Détail articles avec stock négatif
+          </div>
+          <div style="background:var(--bg);border:0.5px solid #F09595;border-radius:var(--radius-sm);overflow:hidden">
+            <div style="display:grid;grid-template-columns:1fr auto auto;font-size:11px;font-weight:600;color:var(--text3);padding:7px 12px;background:var(--red-bg);border-bottom:0.5px solid #F09595">
+              <span>Article</span><span style="text-align:right;padding-right:16px">Quantité</span><span>Dernier mvt</span>
+            </div>
+            ${k.stock.articlesStockNegatif.slice(0,15).map(a=>`
+              <div style="display:grid;grid-template-columns:1fr auto auto;padding:7px 12px;border-bottom:0.5px solid var(--border);font-size:12px;align-items:center">
+                <div>
+                  <div style="font-weight:500;color:var(--text)">${a.numero}</div>
+                  <div style="font-size:11px;color:var(--text2)">${a.description}</div>
+                </div>
+                <div style="text-align:right;padding-right:16px;font-weight:700;color:var(--red)">${a.quantite} ${a.uniteMesure}</div>
+                <div style="font-size:11px;color:var(--text3)">${a.dernierMouvement?new Date(a.dernierMouvement).toLocaleDateString('fr-FR'):'—'}</div>
+              </div>`).join('')}
+            ${k.stock.articlesStockNegatif.length>15?`<div style="padding:7px 12px;font-size:11px;color:var(--text3);text-align:center">... et ${k.stock.articlesStockNegatif.length-15} autres articles</div>`:''}
+          </div>
+        </div>
+      `:''}
+
+      ${(k.stock?.articlesStockDormant||[]).length>0?`
+        <div style="margin-top:12px">
+          <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0"></span>
+            Stock dormant (sans mouvement depuis +90 jours)
+          </div>
+          <div style="background:var(--bg);border:0.5px solid #FAC775;border-radius:var(--radius-sm);overflow:hidden">
+            <div style="display:grid;grid-template-columns:1fr auto auto;font-size:11px;font-weight:600;color:var(--text3);padding:7px 12px;background:var(--amber-bg);border-bottom:0.5px solid #FAC775">
+              <span>Article</span><span style="text-align:right;padding-right:16px">Quantité</span><span>Dernier mvt</span>
+            </div>
+            ${k.stock.articlesStockDormant.slice(0,10).map(a=>`
+              <div style="display:grid;grid-template-columns:1fr auto auto;padding:7px 12px;border-bottom:0.5px solid var(--border);font-size:12px;align-items:center">
+                <div>
+                  <div style="font-weight:500;color:var(--text)">${a.numero}</div>
+                  <div style="font-size:11px;color:var(--text2)">${a.description}</div>
+                </div>
+                <div style="text-align:right;padding-right:16px;font-weight:500;color:var(--amber)">${Math.round(a.quantite*100)/100} ${a.uniteMesure}</div>
+                <div style="font-size:11px;color:var(--text3)">${a.dernierMouvement?new Date(a.dernierMouvement).toLocaleDateString('fr-FR'):'—'}</div>
+              </div>`).join('')}
+            ${k.stock.articlesStockDormant.length>10?`<div style="padding:7px 12px;font-size:11px;color:var(--text3);text-align:center">... et ${k.stock.articlesStockDormant.length-10} autres articles</div>`:''}
+          </div>
+        </div>
+      `:''}
+    </div>
   `;
 }
 
