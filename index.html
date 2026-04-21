@@ -901,6 +901,7 @@ async function runAssessment(){
     if(d.error)throw new Error(d.error);
     const text=d.content.map(i=>i.text||'').join('');
     lastReport=JSON.parse(text.replace(/```json|```/g,'').trim());
+    lastKPI=bcData?.kpiAnalysis||null;
     saveToHistory(lastReport);
     renderReport(lastReport,bcData);
     document.getElementById('sendEmailBtn').disabled=false;
@@ -1051,11 +1052,11 @@ function clearHistory(){if(confirm('Effacer tout l\'historique ?')){localStorage
 
 function renderKPI() {
   const el = document.getElementById('kpiContent');
-  if (!lastReport || !lastKPI) {
+  if (!lastReport) {
     el.innerHTML = '<div class="empty" style="padding:3rem 0">Lancez un assessment pour voir les KPI ERP.</div>';
     return;
   }
-  const k = lastKPI;
+  const k = lastKPI || (bcData?.kpiAnalysis) || {};
   const pct = v => v !== null && v !== undefined && v !== 'N/A' ? v+'%' : 'N/A';
   const val = v => v !== null && v !== undefined ? v : '—';
   const scoreColor = s => s>=80?'#639922':s>=60?'#378ADD':s>=40?'#EF9F27':'#E24B4A';
