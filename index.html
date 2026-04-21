@@ -176,7 +176,7 @@
         <div class="field" style="margin-bottom:10px"><label>Client Secret</label><input type="password" id="clientSecret" placeholder="Valeur du secret" oninput="resetConn()"/></div>
         <div class="field" style="margin-bottom:10px"><label>Nom de l'environnement <span style="color:var(--text3)">(ex: CXD_FRANCE_TEST)</span></label><input type="text" id="envName" placeholder="production" value="production" oninput="resetConn()"/></div>
         <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn-sm" onclick="testConnection()">Tester la connexion →</button>
+          <button class="btn-sm" id="btnTestConn" onclick="testConnection()">Tester la connexion →</button>
           <button class="btn-sm" id="nextStep1" onclick="goStep(2)" disabled style="background:var(--blue);color:#fff;border-color:var(--blue)">Suivant →</button>
         </div>
         <div id="conn-status" class="conn-ind conn-pending"><span class="dot-s dot-pending"></span><span>Entrez vos identifiants</span></div>
@@ -389,7 +389,7 @@ async function bcGet(path){
   const d=await r.json();if(d.error)throw new Error(d.error);return d;
 }
 async function testConnection(){
-  const btn=document.querySelector('#ws1 .btn-sm');btn.disabled=true;btn.textContent='Connexion...';
+  const btn=document.getElementById('btnTestConn');btn.disabled=true;btn.textContent='Connexion...';
   setCS('pending','Authentification OAuth2...');
   try{
     token=await getToken();
@@ -402,7 +402,7 @@ async function testConnection(){
     setCS('ok',`Connecté — ${cos.length} société(s)`);
     document.getElementById('nextStep1').disabled=false;
   }catch(e){setCS('err',e.message);token=null}
-  btn.disabled=false;btn.textContent='Tester la connexion →';
+  document.getElementById('btnTestConn').disabled=false;document.getElementById('btnTestConn').textContent='Tester la connexion →';
 }
 
 async function fetchBCData(cid){
