@@ -148,6 +148,23 @@
 <body>
 
 
+
+<!-- WAITING SCREEN -->
+<div id="waitingScreen" style="display:none;min-height:100vh;display:none;align-items:center;justify-content:center;padding:1rem;background:var(--bg3)">
+  <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:16px;padding:2.5rem;max-width:420px;width:100%;text-align:center">
+    <div style="width:64px;height:64px;background:var(--amber-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:28px">⏳</div>
+    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Accès en attente</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:1.5rem">
+      Votre compte <strong id="waitingEmail"></strong> a bien été créé.<br>
+      L'administrateur va activer votre accès sous peu.
+    </div>
+    <div style="background:var(--bg2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6">
+      Vous recevrez un accès dès que votre compte sera validé. Vous pouvez fermer cette page et revenir plus tard.
+    </div>
+    <button class="btn-sm" onclick="doLogout()" style="width:100%;padding:10px;font-size:13px">Se déconnecter</button>
+  </div>
+</div>
+
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-box">
@@ -432,18 +449,31 @@ async function checkAccess() {
     const hasAccess = d.access === true;
     const isAdmin = d.admin === true;
 
-    // Bouton run
+    if (!hasAccess) {
+      // Masquer l'app, afficher l'écran d'attente
+      document.getElementById('mainApp').style.display = 'none';
+      const ws = document.getElementById('waitingScreen');
+      ws.style.display = 'flex';
+      const emailEl = document.getElementById('waitingEmail');
+      if (emailEl) emailEl.textContent = d.email || localStorage.getItem('bc_auth_email') || '';
+      return;
+    }
+
+    // Accès OK — s'assurer que l'app est visible
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('waitingScreen').style.display = 'none';
+
+    // Bouton run visible
     const runBtn = document.getElementById('runBtnFixed');
     const lockedMsg = document.getElementById('lockedMsg');
-    if (runBtn) runBtn.style.display = hasAccess ? 'block' : 'none';
-    if (lockedMsg) lockedMsg.style.display = hasAccess ? 'none' : 'block';
+    if (runBtn) runBtn.style.display = 'block';
+    if (lockedMsg) lockedMsg.style.display = 'none';
 
     // Barre statut
     const statusEl = document.getElementById('userStatus');
     if (statusEl) {
       if (isAdmin) statusEl.textContent = 'Administrateur · Accès complet';
-      else if (hasAccess) statusEl.textContent = 'Accès activé · BC Assessment';
-      else statusEl.textContent = "Accès en attente d'activation";
+      else statusEl.textContent = 'Accès activé · BC Assessment';
     }
 
     // Onglet admin si admin
@@ -456,7 +486,6 @@ async function checkAccess() {
         adminTab.textContent = 'Admin';
         adminTab.onclick = () => switchTab('admin');
         tabs.appendChild(adminTab);
-        // Ajouter panel admin
         const mainApp = document.getElementById('mainApp');
         if (mainApp && !document.getElementById('tab-admin')) {
           const panel = document.createElement('div');
@@ -469,6 +498,8 @@ async function checkAccess() {
     }
   } catch(e) {
     console.error('Access check error:', e);
+    // En cas d'erreur réseau, ne pas bloquer
+    document.getElementById('mainApp').style.display = 'block';
   }
 }
 // ── FIN GESTION ACCÈS ────────────────────────────────
@@ -539,6 +570,7 @@ async function doLogout() {
   localStorage.removeItem('bc_auth_token');
   localStorage.removeItem('bc_auth_email');
   document.getElementById('authOverlay').style.display = 'flex';
+  document.getElementById('waitingScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'none';
   document.getElementById('userBar').style.display = 'none';
 }
@@ -547,7 +579,8 @@ function onLoginSuccess(email) {
   localStorage.setItem('bc_auth_token', authToken);
   localStorage.setItem('bc_auth_email', email);
   document.getElementById('authOverlay').style.display = 'none';
-  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('waitingScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'none'; // révélé par checkAccess
   document.getElementById('userBar').style.display = 'flex';
   const initials = email.substring(0,2).toUpperCase();
   document.getElementById('userAvatar').textContent = initials;
