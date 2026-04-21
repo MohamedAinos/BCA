@@ -128,7 +128,7 @@
 <div class="page">
   <div class="logo">
     <div class="logo-icon"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg></div>
-    <div><div class="logo-text">BC Assessment</div><div class="logo-sub">Business Central · Powered by MDA · PME Edition</div></div>
+    <div><div class="logo-text">BC Assessment</div><div class="logo-sub">Business Central · Powered by AI · PME Edition</div></div>
   </div>
 
   <div class="tabs">
@@ -289,10 +289,13 @@
 
       <!-- STEP 4 : RÉSULTAT -->
       <div class="wizard-step" id="ws4">
-        <button class="btn-primary" id="runBtn" onclick="runAssessment()">Lancer l'assessment complet</button>
-        <div id="resultArea" style="margin-top:1rem"></div>
+        <p style="font-size:12px;color:var(--text2);text-align:center;padding:8px 0">Cliquez sur le bouton ci-dessous pour lancer l'analyse</p>
       </div>
     </div>
+
+    <!-- Bouton toujours visible -->
+    <button class="btn-primary" id="runBtnFixed" onclick="runAssessment()" style="margin-top:0">Lancer l'assessment complet</button>
+    <div id="resultArea" style="margin-top:1rem"></div>
   </div>
 
   <!-- DASHBOARD -->
@@ -353,7 +356,7 @@ function goStep(n){
     const el=document.getElementById(id);
     el.className='step-dot '+(i+1<n?'done':i+1===n?'active':'inactive');
   });
-  if(n===4)document.getElementById('runBtn').scrollIntoView({behavior:'smooth',block:'nearest'});
+  if(n===4)document.getElementById('runBtnFixed').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function toggleType(btn){const t=btn.dataset.type;if(selTypes.has(t)){if(selTypes.size>1){selTypes.delete(t);btn.classList.remove('active')}}else{selTypes.add(t);btn.classList.add('active')}}
@@ -406,7 +409,112 @@ async function testConnection(){
   document.getElementById('btnTestConn').disabled=false;document.getElementById('btnTestConn').textContent='Tester la connexion →';
 }
 
+
+// Analyse Ségrégation des Tâches
+function analyzeSoD(users, permissions) {
+  // Définition des conflits de droits critiques
+  const conflictRules = [
+    {
+      id: 'SOD001',
+      label: 'Acheteur + Paiement fournisseurs',
+      gravite: 'critique',
+      permA: ['PURCHASES-PAYABLES','D365 PURCH, PAYABLES','PURCHASE ORDER','PURCH PAY ADMIN'],
+      permB: ['PAYMENT JOURNAL','D365 FINANCE','BANK ACCOUNT','PMT JOURNAL'],
+      description: 'Peut créer des commandes fournisseurs ET effectuer des paiements'
+    },
+    {
+      id: 'SOD002',
+      label: 'Création clients + Encaissement',
+      gravite: 'critique',
+      permA: ['CUSTOMER','D365 SALES','SALES ORDER'],
+      permB: ['CASH RECEIPT','PAYMENT JOURNAL','BANK ACCOUNT'],
+      description: 'Peut créer des clients ET encaisser des paiements'
+    },
+    {
+      id: 'SOD003',
+      label: 'Gestion stocks + Valorisation',
+      gravite: 'attention',
+      permA: ['ITEM','INVENTORY','WAREHOUSE'],
+      permB: ['ITEM COST','ADJUST COST','D365 FINANCE'],
+      description: 'Peut modifier les stocks ET ajuster les coûts'
+    },
+    {
+      id: 'SOD004',
+      label: 'Saisie écritures + Validation',
+      gravite: 'attention',
+      permA: ['GENERAL JOURNAL','JOURNAL'],
+      permB: ['POST JOURNAL','D365 FINANCE'],
+      description: 'Peut saisir ET valider les écritures comptables'
+    },
+    {
+      id: 'SOD005',
+      label: 'Création fournisseurs + Paiement',
+      gravite: 'critique',
+      permA: ['VENDOR','D365 PURCH'],
+      permB: ['PAYMENT JOURNAL','BANK ACCOUNT','PMT JOURNAL'],
+      description: 'Peut créer des fournisseurs ET effectuer des paiements'
+    },
+  ];
+
+  const result = {
+    totalUsers: users.length,
+    superUsers: [],
+    conflictsFound: [],
+    usersWithConflicts: [],
+    riskScore: 0,
+  };
+
+  // Détecter les utilisateurs SUPER
+  users.forEach(u => {
+    const userPerms = permissions.filter(p => p.userId === u.id || p.userSecurityId === u.userSecurityId);
+    const permNames = userPerms.map(p => (p.permissionSetId||p.roleId||'').toUpperCase());
+    if (permNames.some(p => p.includes('SUPER') || p === 'D365 FULL ACCESS' || p.includes('FULL ACCESS'))) {
+      result.superUsers.push({
+        name: u.displayName || u.userName || u.id,
+        email: u.contactEmail || u.authenticationEmail || '',
+        perms: permNames.filter(p => p.includes('SUPER') || p.includes('FULL ACCESS')),
+      });
+    }
+  });
+
+  // Détecter les conflits SOD
+  users.forEach(u => {
+    const userPerms = permissions.filter(p => p.userId === u.id || p.userSecurityId === u.userSecurityId);
+    const permNames = userPerms.map(p => (p.permissionSetId||p.roleId||'').toUpperCase());
+    const userName = u.displayName || u.userName || u.id;
+
+    conflictRules.forEach(rule => {
+      const hasA = rule.permA.some(pa => permNames.some(p => p.includes(pa)));
+      const hasB = rule.permB.some(pb => permNames.some(p => p.includes(pb)));
+      if (hasA && hasB) {
+        result.conflictsFound.push({
+          userId: u.id,
+          userName,
+          ruleId: rule.id,
+          label: rule.label,
+          gravite: rule.gravite,
+          description: rule.description,
+        });
+        if (!result.usersWithConflicts.includes(userName)) {
+          result.usersWithConflicts.push(userName);
+        }
+      }
+    });
+  });
+
+  // Score de risque sécurité
+  const critiques = result.conflictsFound.filter(c => c.gravite === 'critique').length;
+  const attentions = result.conflictsFound.filter(c => c.gravite === 'attention').length;
+  const superCount = result.superUsers.length;
+  result.riskScore = Math.min(100, (critiques * 25) + (attentions * 10) + (superCount > 2 ? (superCount - 2) * 15 : 0));
+
+  return result;
+}
+
 async function fetchBCData(cid){
+  const tid=document.getElementById('tenantId').value.trim();
+  const env=getEnv();
+  const baseAdmin=`https://api.businesscentral.dynamics.com/v2.0/${tid}/${env}`;
   const eps=[
     ['/api/v2.0/companies('+cid+')/accounts?$top=200','accounts'],
     ['/api/v2.0/companies('+cid+')/customers?$top=100','customers'],
@@ -419,8 +527,23 @@ async function fetchBCData(cid){
     ['/api/v2.0/companies('+cid+')/journals?$top=50','journals'],
     ['/api/v2.0/companies('+cid+')/taxGroups?$top=50','taxGroups'],
   ];
+  // Endpoints sécurité via API OData standard
+  const secEps=[
+    [`${baseAdmin}/api/v2.0/users?$top=100`,'users'],
+    [`${baseAdmin}/api/v2.0/userPermissions?$top=500`,'userPermissions'],
+    [`${baseAdmin}/api/v2.0/permissionSets?$top=200`,'permissionSets'],
+  ];
   const r={};
   for(const[p,k]of eps){try{const d=await bcGet(p);r[k]=d.value||[]}catch{r[k]=[]}}
+  // Collecte sécurité
+  for(const[url,k]of secEps){
+    try{
+      const resp=await fetch('/api/bc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,token})});
+      const d=await resp.json();r[k]=d.value||[];
+    }catch{r[k]=[]}
+  }
+  // Analyse SOD (Ségrégation des tâches) - détection conflits de droits
+  r.sodAnalysis = analyzeSoD(r.users||[], r.userPermissions||[]);
   return r;
 }
 
@@ -454,6 +577,16 @@ RÉPONSES CONSULTANT PRÉ-AUDIT:
 
 DONNÉES RÉELLES EXTRAITES DE BC:
 ${JSON.stringify(s,null,2)}
+
+ANALYSE SÉCURITÉ & SOD (Ségrégation des Tâches):
+${JSON.stringify(secSummary,null,2)}
+
+RÈGLES SOD VÉRIFIÉES:
+- SOD001: Acheteur + Paiement fournisseurs (CRITIQUE)
+- SOD002: Création clients + Encaissement (CRITIQUE)
+- SOD003: Gestion stocks + Valorisation (ATTENTION)
+- SOD004: Saisie + Validation écritures (ATTENTION)
+- SOD005: Création fournisseurs + Paiement (CRITIQUE)
 
 MODULES À AUDITER: ${modulesList}
 
@@ -502,7 +635,7 @@ Génère un rapport JSON structuré et exhaustif. Réponds UNIQUEMENT en JSON va
 }
 
 async function runAssessment(){
-  const btn=document.getElementById('runBtn'),ra=document.getElementById('resultArea');
+  const btn=document.getElementById('runBtnFixed'),ra=document.getElementById('resultArea');
   const sel=document.getElementById('company-select');
   const cid=sel.value,cname=sel.options[sel.selectedIndex]?.text||'Société BC';
   btn.disabled=true;
@@ -549,6 +682,30 @@ function renderReport(r,data){
       <span class="bench-val" style="color:${scoreColor(m.score)}">${m.score}</span>
       <span class="bench-ref">ref: ${m.benchmark_secteur??65}</span>
     </div>`).join('');
+
+  // Section sécurité SOD enrichie
+  const sod = data?.sodAnalysis || {};
+  const sodHtml = sod.totalUsers > 0 ? `
+    <div class="section-block" style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px">
+      <div class="slabel" style="margin-bottom:8px">Analyse SOD — Ségrégation des tâches</div>
+      ${sod.superUsers?.length > 0 ? `
+        <div style="background:var(--red-bg);border:0.5px solid #F09595;border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:4px">Utilisateurs avec droits SUPER / FULL ACCESS (${sod.superUsers.length})</div>
+          ${sod.superUsers.map(u=>`<div style="font-size:12px;color:var(--red);padding:2px 0">• ${u.name}${u.email?' — '+u.email:''}</div>`).join('')}
+        </div>` : '<div style="font-size:12px;color:var(--green);padding:4px 0;margin-bottom:6px">✓ Aucun utilisateur avec droits SUPER détecté</div>'}
+      ${sod.conflictsFound?.length > 0 ? `
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Conflits de droits détectés (${sod.conflictsFound.length})</div>
+        ${sod.conflictsFound.map(c=>`
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border)">
+            <span class="tag ${c.gravite==='critique'?'tag-crit':'tag-warn'}">${c.gravite}</span>
+            <div>
+              <div style="font-size:12px;font-weight:500;color:var(--text)">${c.userName} — ${c.label}</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px">${c.description}</div>
+            </div>
+          </div>`).join('')}
+      ` : '<div style="font-size:12px;color:var(--green);padding:4px 0">✓ Aucun conflit SOD détecté</div>'}
+      <div style="margin-top:8px;font-size:11px;color:var(--text3)">${sod.totalUsers} utilisateur(s) analysé(s) · Score de risque sécurité : ${sod.riskScore}/100</div>
+    </div>` : '';
 
   // Findings par module
   const findingsHtml=(r.modules||[]).filter(m=>selTypes.has(m.id)).map(m=>`
@@ -619,6 +776,7 @@ function renderReport(r,data){
 
         <div class="section-block">
           <div class="slabel">Analyse détaillée par module</div>
+          ${sodHtml}
           ${findingsHtml}
         </div>
 
