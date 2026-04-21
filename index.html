@@ -338,6 +338,7 @@
   </div>
 </div>
 
+<!-- v20260421_084711 -->
 <script>
 const SK='bc_assessment_history',SCHK='bc_assessment_schedule';
 let selTypes=new Set(['finance','achats','ventes','stock','immobilisations','securite']);
@@ -536,7 +537,7 @@ function renderReport(r,data){
     <div class="module-card">
       <div class="mscore" style="color:${scoreColor(m.score)}">${m.score}</div>
       <div class="mname">${m.nom}</div>
-      ${m.ecart_benchmark!=null?`<div style="font-size:10px;color:${m.ecart_benchmark>=0?'var(--green)':'var(--red)';margin-top:2px}">${m.ecart_benchmark>=0?'+':''}${m.ecart_benchmark} vs secteur</div>`:''}
+      ${m.ecart_benchmark!=null?'<div style="font-size:10px;color:'+(m.ecart_benchmark>=0?'var(--green)':'var(--red)')+'">'+(m.ecart_benchmark>=0?'+':'')+m.ecart_benchmark+' vs secteur</div>':''}
       <div class="mbar"><div class="mbar-fill" style="width:${m.score}%;background:${scoreColor(m.score)}"></div></div>
     </div>`).join('');
 
