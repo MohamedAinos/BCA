@@ -147,6 +147,7 @@
 </head>
 <body>
 
+
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-box">
@@ -356,7 +357,14 @@
     </div>
 
     <!-- Bouton toujours visible -->
-    <button class="btn-primary" id="runBtnFixed" onclick="runAssessment()" style="margin-top:0">Lancer l'assessment complet</button>
+    <div id="accessGate">
+      <button class="btn-primary" id="runBtnFixed" onclick="runAssessment()" style="margin-top:0;display:none">Lancer l'assessment complet</button>
+      <div id="lockedMsg" style="background:var(--bg2);border:1.5px dashed var(--border2);border-radius:8px;padding:1.5rem;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">🔒</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">Accès en attente d'activation</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">Votre compte est créé. L'administrateur doit activer votre accès avant de pouvoir lancer des assessments.</div>
+      </div>
+    </div>
     <div id="resultArea" style="margin-top:1rem"></div>
   </div>
 
@@ -411,6 +419,59 @@
 <!-- v20260421_084711 -->
 <script>
 
+
+
+// ── GESTION ACCÈS SIMPLE ─────────────────────────────
+async function checkAccess() {
+  if (!authToken) return;
+  try {
+    const r = await fetch('/api/access', {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    const d = await r.json();
+    const hasAccess = d.access === true;
+    const isAdmin = d.admin === true;
+
+    // Bouton run
+    const runBtn = document.getElementById('runBtnFixed');
+    const lockedMsg = document.getElementById('lockedMsg');
+    if (runBtn) runBtn.style.display = hasAccess ? 'block' : 'none';
+    if (lockedMsg) lockedMsg.style.display = hasAccess ? 'none' : 'block';
+
+    // Barre statut
+    const statusEl = document.getElementById('userStatus');
+    if (statusEl) {
+      if (isAdmin) statusEl.textContent = 'Administrateur · Accès complet';
+      else if (hasAccess) statusEl.textContent = 'Accès activé · BC Assessment';
+      else statusEl.textContent = "Accès en attente d'activation";
+    }
+
+    // Onglet admin si admin
+    if (isAdmin) {
+      const tabs = document.querySelector('.tabs');
+      if (tabs && !document.getElementById('adminTab')) {
+        const adminTab = document.createElement('button');
+        adminTab.className = 'tab';
+        adminTab.id = 'adminTab';
+        adminTab.textContent = 'Admin';
+        adminTab.onclick = () => switchTab('admin');
+        tabs.appendChild(adminTab);
+        // Ajouter panel admin
+        const mainApp = document.getElementById('mainApp');
+        if (mainApp && !document.getElementById('tab-admin')) {
+          const panel = document.createElement('div');
+          panel.id = 'tab-admin';
+          panel.className = 'panel';
+          panel.innerHTML = '<div id="adminContent"></div>';
+          mainApp.appendChild(panel);
+        }
+      }
+    }
+  } catch(e) {
+    console.error('Access check error:', e);
+  }
+}
+// ── FIN GESTION ACCÈS ────────────────────────────────
 // ── AUTH ──────────────────────────────────────────────
 let currentUser = null;
 let authToken = null;
@@ -493,6 +554,7 @@ function onLoginSuccess(email) {
   document.getElementById('userEmail').textContent = email;
   document.getElementById('userStatus').textContent = 'Espace sécurisé · BC Assessment';
   loadProfile();
+  checkAccess();
 }
 
 async function loadProfile() {
@@ -558,7 +620,7 @@ const SK='bc_assessment_history',SCHK='bc_assessment_schedule';
 let selTypes=new Set(['finance','achats','ventes','stock','immobilisations','securite']);
 let token=null,bcData=null,lastReport=null,lastKPI=null,chart=null,currentStep=1;
 
-function switchTab(n){document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['assess','kpi','dashboard','schedule','email'][i]===n));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+n).classList.add('active');if(n==='dashboard')renderDashboard();if(n==='schedule')renderSchedule();if(n==='kpi')renderKPI()}
+function switchTab(n){document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['assess','kpi','dashboard','schedule','email'][i]===n));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+n).classList.add('active');if(n==='dashboard')renderDashboard();if(n==='schedule')renderSchedule();if(n==='kpi')renderKPI();if(n==='admin')renderAdmin()}
 
 function goStep(n){
   currentStep=n;
@@ -1471,6 +1533,83 @@ function renderKPI() {
   `;
 }
 
+
+function renderAdmin() {
+  const el = document.getElementById('adminContent');
+  if (!el) return;
+  el.innerHTML = `<div id="adminLoader" class="status-bar"><div class="spinner"></div><span>Chargement des utilisateurs...</span></div>`;
+  fetch('/api/admin', { headers: { 'Authorization': `Bearer ${authToken}` } })
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) { el.innerHTML=`<div class="error-msg">${d.error}</div>`; return; }
+      const users = d.users || [];
+      el.innerHTML = `
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="slabel" style="margin:0">Gestion des accès (${users.length} utilisateur(s))</div>
+            <button class="btn-sm" onclick="renderAdmin()">Actualiser</button>
+          </div>
+          ${users.length === 0 ? '<div class="empty">Aucun utilisateur inscrit.</div>' :
+            users.map(u => `
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border)">
+                <div style="width:32px;height:32px;border-radius:50%;background:var(--blue-bg);color:var(--blue-dark);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">
+                  ${u.email.substring(0,2).toUpperCase()}
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.email}</div>
+                  <div style="font-size:11px;color:var(--text2);margin-top:1px">Inscrit le ${new Date(u.created_at).toLocaleDateString('fr-FR')}</div>
+                </div>
+                <span class="tag ${u.access ? 'tag-ok' : 'tag-warn'}">${u.access ? 'Accès activé' : 'En attente'}</span>
+                ${u.admin ? '<span class="tag tag-info">Admin</span>' : ''}
+                <button class="btn-sm" style="font-size:11px;${u.access?'color:var(--red);border-color:#F09595':''}" 
+                  onclick="toggleAccess('${u.user_id}', ${!u.access})">
+                  ${u.access ? 'Révoquer' : 'Activer'}
+                </button>
+              </div>`).join('')}
+        </div>
+        <div class="card">
+          <div class="slabel">Inviter un utilisateur par email</div>
+          <div style="display:flex;gap:8px">
+            <input type="email" id="inviteEmail" placeholder="client@societe.com" style="flex:1"/>
+            <button class="btn-sm" onclick="grantAccessByEmail()" style="background:var(--blue);color:#fff;border-color:var(--blue)">Activer l'accès</button>
+          </div>
+          <div id="inviteMsg" style="margin-top:8px;font-size:12px"></div>
+        </div>
+      `;
+    })
+    .catch(e => el.innerHTML=`<div class="error-msg">Erreur: ${e.message}</div>`);
+}
+
+async function toggleAccess(userId, grant) {
+  try {
+    const r = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+      body: JSON.stringify({ action: 'toggle_access', user_id: userId, access: grant })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    renderAdmin();
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+async function grantAccessByEmail() {
+  const email = document.getElementById('inviteEmail').value.trim();
+  const msg = document.getElementById('inviteMsg');
+  if (!email) { msg.innerHTML='<span style="color:var(--red)">Entrez un email</span>'; return; }
+  try {
+    const r = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+      body: JSON.stringify({ action: 'grant_by_email', email })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    msg.innerHTML='<span style="color:var(--green)">✓ Accès activé pour ' + email + '</span>';
+    document.getElementById('inviteEmail').value = '';
+    setTimeout(renderAdmin, 1500);
+  } catch(e) { msg.innerHTML=`<span style="color:var(--red)">${e.message}</span>`; }
+}
 function renderDashboard(){
   const h=getHistory();
   if(!h.length){document.getElementById('histList').innerHTML='<div class="empty">Aucun assessment enregistré.</div>';if(chart){chart.destroy();chart=null}return}
