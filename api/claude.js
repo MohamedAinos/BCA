@@ -9,22 +9,36 @@ export default async function handler(req, res) {
   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }],
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 2000,
+        temperature: 0.3,
+        messages: [
+          {
+            role: 'system',
+            content: 'Tu es un expert ERP Microsoft Business Central certifié. Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans balises, sans texte avant ou après le JSON.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
       }),
     });
+
     const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
-    return res.status(200).json(data);
+    if (data.error) return res.status(500).json({ error: data.error.message || JSON.stringify(data.error) });
+
+    const text = data.choices?.[0]?.message?.content || '';
+    return res.status(200).json({
+      content: [{ type: 'text', text }]
+    });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
