@@ -718,6 +718,341 @@ async function testConnection(){
 
 
 // Calcul des KPI d'utilisation ERP
+
+// ════════════════════════════════════════════════════
+// ANALYSE APPROFONDIE PAR MODULE
+// ════════════════════════════════════════════════════
+function computeDeepAnalysis(data) {
+  const now = new Date();
+  const d30  = new Date(now - 30*24*3600*1000);
+  const d60  = new Date(now - 60*24*3600*1000);
+  const d90  = new Date(now - 90*24*3600*1000);
+  const d180 = new Date(now - 180*24*3600*1000);
+  const d365 = new Date(now - 365*24*3600*1000);
+  const parse = s => s ? new Date(s) : null;
+  const daysBetween = (a,b) => a&&b?Math.round(Math.abs(b-a)/(1000*3600*24)):null;
+  const pct = (a,b) => b>0?Math.round(a/b*100):0;
+
+  // ── FINANCE ────────────────────────────────────────
+  const glEntries   = data.glEntries || [];
+  const journals    = data.generalJournals || [];
+  const periods     = data.accountingPeriods || [];
+  const accounts    = data.accounts || [];
+
+  // Journaux non validés
+  const journauxNonValides = journals.filter(j => !j.lastModifiedDateTime || j.balancingType === 'Balance');
+  const nbJournauxOuverts  = journauxNonValides.length;
+
+  // Périodes comptables ouvertes trop longtemps
+  const periodesOuvertes = periods.filter(p => !p.closed && parse(p.startingDate) < d90);
+
+  // Comptes sans mouvements 12 mois
+  const comptesAvecMvt = new Set(glEntries.filter(e => parse(e.postingDate) > d365).map(e => e.accountNumber).filter(Boolean));
+  const comptesSansMvt12m = accounts.filter(a => a.accountType === 'Posting' && !comptesAvecMvt.has(a.number));
+
+  // Écritures antidatées (postées avec date > 6 mois dans le passé)
+  const ecrituresAntidatees = glEntries.filter(e => {
+    const d = parse(e.postingDate);
+    return d && d < d180 && parse(e.lastModifiedDateTime) > d30;
+  });
+
+  // Ratio écritures manuelles (sans source doc)
+  const ecrituresManuelles = glEntries.filter(e => !e.documentType || e.documentType === ' ').length;
+  const ratioManuel = pct(ecrituresManuelles, glEntries.length||1);
+
+  // Comptes sans groupe de comptabilisation
+  const comptesSansGroupe = accounts.filter(a => a.accountType==='Posting' && !a.generalPostingType && !a.genBusPostingGroup);
+
+  const finance = {
+    nbJournauxOuverts,
+    nbPeriodesOuvertesTrop: periodesOuvertes.length,
+    nbComptesSansMvt12m: comptesSansMvt12m.length,
+    pctComptesSansMvt: pct(comptesSansMvt12m.length, accounts.filter(a=>a.accountType==='Posting').length||1),
+    nbEcrituresAntidatees: ecrituresAntidatees.length,
+    ratioEcrituresManuelles: ratioManuel,
+    nbComptesSansGroupe: comptesSansGroupe.length,
+    totalEcritures: glEntries.length,
+    scoreFinance: Math.max(0, 100
+      - (nbJournauxOuverts > 5 ? 20 : nbJournauxOuverts * 3)
+      - (periodesOuvertes.length > 0 ? 15 : 0)
+      - (pct(comptesSansMvt12m.length, accounts.length||1) > 30 ? 10 : 0)
+      - (ecrituresAntidatees.length > 0 ? 15 : 0)
+      - (ratioManuel > 40 ? 15 : ratioManuel > 20 ? 8 : 0)
+      - (comptesSansGroupe.length > 5 ? 10 : 0)
+    ),
+  };
+
+  // ── ACHATS ─────────────────────────────────────────
+  const vendors        = data.vendors || [];
+  const purchaseInv    = data.purchaseInvoices || [];
+  const purchaseOrd    = data.purchaseOrdersOpen || data.purchaseOrders || [];
+  const purchaseRec    = data.purchaseReceipts || [];
+  const paymentTerms   = data.paymentTerms || [];
+
+  // Factures sans PO associée
+  const facturesSansPO = purchaseInv.filter(i => !i.orderNumber && !i.purchaseOrderNumber);
+  const pctFacturesSansPO = pct(facturesSansPO.length, purchaseInv.length||1);
+
+  // Fournisseurs sans conditions de paiement
+  const vendorsSansPaymentTerms = vendors.filter(v => !v.paymentTermsId && !v.paymentTerms);
+
+  // Fournisseurs sans coordonnées bancaires (iban/rib)
+  const vendorsSansBank = vendors.filter(v => !v.iban && !v.bankAccountNumber && !v.currencyId);
+
+  // Réceptions non facturées +30j (GR sans IR)
+  const receptionsNonFacturees = purchaseRec.filter(r => {
+    const d = parse(r.postingDate || r.receiptDate);
+    return d && d < d30 && !r.invoiceDate;
+  });
+
+  // Factures fournisseurs échues non payées
+  const facturesEchues = purchaseInv.filter(i => {
+    const due = parse(i.dueDate);
+    return due && due < now && (i.status === 'Open' || i.remainingAmount > 0);
+  });
+
+  // Concentration fournisseurs (par montant)
+  const vendorAmounts = {};
+  purchaseInv.forEach(i => {
+    const vid = i.vendorId || i.vendorNumber;
+    if (vid) vendorAmounts[vid] = (vendorAmounts[vid]||0) + (parseFloat(i.totalAmountIncludingTax)||0);
+  });
+  const totalAchats = Object.values(vendorAmounts).reduce((a,b)=>a+b,0);
+  const top3Achats  = Object.values(vendorAmounts).sort((a,b)=>b-a).slice(0,3).reduce((a,b)=>a+b,0);
+  const concentrationFournisseurs = pct(top3Achats, totalAchats||1);
+
+  const achats = {
+    nbFacturesSansPO: facturesSansPO.length,
+    pctFacturesSansPO,
+    nbVendorsSansPaymentTerms: vendorsSansPaymentTerms.length,
+    pctVendorsSansPaymentTerms: pct(vendorsSansPaymentTerms.length, vendors.length||1),
+    nbVendorsSansBank: vendorsSansBank.length,
+    nbReceptionsNonFacturees: receptionsNonFacturees.length,
+    nbFacturesEchues: facturesEchues.length,
+    concentrationFournisseurs,
+    totalFournisseurs: vendors.length,
+    scoreAchats: Math.max(0, 100
+      - (pctFacturesSansPO > 30 ? 20 : pctFacturesSansPO > 15 ? 10 : 0)
+      - (pct(vendorsSansPaymentTerms.length, vendors.length||1) > 20 ? 15 : 0)
+      - (receptionsNonFacturees.length > 5 ? 15 : 0)
+      - (facturesEchues.length > 3 ? 20 : facturesEchues.length * 5)
+      - (concentrationFournisseurs > 70 ? 15 : concentrationFournisseurs > 50 ? 8 : 0)
+    ),
+  };
+
+  // ── VENTES ─────────────────────────────────────────
+  const customers   = data.customers || [];
+  const salesInv    = data.salesInvoices || [];
+  const salesOrd    = data.salesOrdersOpen || data.salesOrders || [];
+  const salesQuotes = data.salesQuotes || [];
+
+  // Devis expirés (date > aujourd'hui et non convertis)
+  const devisExpires = salesQuotes.filter(q => {
+    const exp = parse(q.validUntilDate || q.expirationDate);
+    return exp && exp < now && q.status !== 'Accepted' && q.status !== 'Sent';
+  });
+
+  // Taux conversion devis → commande
+  const devisTotal    = salesQuotes.length;
+  const devisConverti = salesQuotes.filter(q => q.status === 'Accepted').length;
+  const tauxConversion = pct(devisConverti, devisTotal||1);
+
+  // Clients sans limite de crédit
+  const clientsSansCredit = customers.filter(c => !c.creditLimitLCY || parseFloat(c.creditLimitLCY) === 0);
+
+  // Clients sans conditions de paiement
+  const clientsSansPaymentTerms = customers.filter(c => !c.paymentTermsId && !c.paymentTerms);
+
+  // Factures clients échues +60j
+  const facturesClientEchues60 = salesInv.filter(i => {
+    const due = parse(i.dueDate);
+    return due && due < d60 && (i.status === 'Open' || i.remainingAmount > 0);
+  });
+
+  // Concentration clients
+  const customerAmounts = {};
+  salesInv.forEach(i => {
+    const cid = i.customerId || i.customerNumber;
+    if (cid) customerAmounts[cid] = (customerAmounts[cid]||0) + (parseFloat(i.totalAmountIncludingTax)||0);
+  });
+  const totalVentes   = Object.values(customerAmounts).reduce((a,b)=>a+b,0);
+  const top3Ventes    = Object.values(customerAmounts).sort((a,b)=>b-a).slice(0,3).reduce((a,b)=>a+b,0);
+  const concentrationClients = pct(top3Ventes, totalVentes||1);
+
+  // DSO réel (jours moyens de paiement)
+  const dsoSamples = salesInv
+    .filter(i => i.invoiceDate && i.dueDate && (i.status==='Paid'||i.remainingAmount===0))
+    .slice(0,50)
+    .map(i => daysBetween(parse(i.invoiceDate), parse(i.dueDate)))
+    .filter(d => d!==null && d>=0 && d<365);
+  const dsoReel = dsoSamples.length ? Math.round(dsoSamples.reduce((a,b)=>a+b,0)/dsoSamples.length) : null;
+
+  const ventes = {
+    nbDevisExpires: devisExpires.length,
+    tauxConversionDevis: tauxConversion,
+    totalDevis: devisTotal,
+    nbClientsSansCredit: clientsSansCredit.length,
+    pctClientsSansCredit: pct(clientsSansCredit.length, customers.length||1),
+    nbClientsSansPaymentTerms: clientsSansPaymentTerms.length,
+    nbFacturesEchues60j: facturesClientEchues60.length,
+    concentrationClients,
+    dsoReel,
+    scoreVentes: Math.max(0, 100
+      - (pct(clientsSansCredit.length, customers.length||1) > 40 ? 15 : 0)
+      - (facturesClientEchues60.length > 5 ? 20 : facturesClientEchues60.length * 3)
+      - (concentrationClients > 70 ? 15 : concentrationClients > 50 ? 8 : 0)
+      - (devisExpires.length > 10 ? 10 : 0)
+      - (tauxConversion < 20 ? 10 : 0)
+    ),
+  };
+
+  // ── STOCK ──────────────────────────────────────────
+  const items      = data.items || [];
+  const categories = data.itemCategories || [];
+  const uoms       = data.unitsOfMeasure || [];
+  const locations  = data.locations || [];
+  const itemLedger = data.itemLedgerEntries || [];
+
+  // Articles sans prix de vente
+  const articlesSansPrixVente = items.filter(i => !i.unitPrice || parseFloat(i.unitPrice)===0);
+
+  // Articles sans prix d'achat
+  const articlesSansPrixAchat = items.filter(i => !i.unitCost && !i.lastDirectCost);
+
+  // Articles sans catégorie
+  const articlesSansCategorie = items.filter(i => !i.itemCategoryId && !i.itemCategoryCode);
+
+  // Articles sans unité de mesure
+  const articlesSansUDM = items.filter(i => !i.baseUnitOfMeasure);
+
+  // Méthode de coût mixte (FIFO + Standard dans la même base)
+  const methodes = new Set(items.map(i=>i.costingMethod).filter(Boolean));
+  const methodeMixte = methodes.size > 1;
+
+  // Stock négatif (déjà dans KPI, enrichi avec valeur €)
+  const stockParArticle = {};
+  itemLedger.forEach(e => {
+    const id = e.itemNumber||e.number;
+    if (!id) return;
+    if (!stockParArticle[id]) stockParArticle[id] = {
+      numero:id, description:e.description||id,
+      quantite:0, valeur:0, dernierMvt:null, uniteMesure:e.unitOfMeasureCode||''
+    };
+    stockParArticle[id].quantite += parseFloat(e.quantity)||0;
+    stockParArticle[id].valeur   += parseFloat(e.costAmount)||0;
+    if (!stockParArticle[id].dernierMvt || parse(e.postingDate)>parse(stockParArticle[id].dernierMvt))
+      stockParArticle[id].dernierMvt = e.postingDate;
+  });
+  const articlesNegatifs = Object.values(stockParArticle).filter(a=>a.quantite<0).sort((a,b)=>a.quantite-b.quantite);
+  const valeurNegativeTotale = Math.round(articlesNegatifs.reduce((s,a)=>s+a.valeur,0));
+
+  const stock = {
+    nbArticlesSansPrixVente: articlesSansPrixVente.length,
+    pctArticlesSansPrixVente: pct(articlesSansPrixVente.length, items.length||1),
+    nbArticlesSansPrixAchat: articlesSansPrixAchat.length,
+    nbArticlesSansCategorie: articlesSansCategorie.length,
+    pctArticlesSansCategorie: pct(articlesSansCategorie.length, items.length||1),
+    nbArticlesSansUDM: articlesSansUDM.length,
+    methodeMixte,
+    methodes: [...methodes].join(', '),
+    nbLocations: locations.length,
+    nbCategories: categories.length,
+    nbUoms: uoms.length,
+    nbArticlesNegatifs: articlesNegatifs.length,
+    valeurNegativeTotale,
+    articlesNegatifs: articlesNegatifs.slice(0,15),
+    scoreStock: Math.max(0, 100
+      - (pct(articlesSansPrixVente.length, items.length||1) > 20 ? 20 : 0)
+      - (pct(articlesSansCategorie.length, items.length||1) > 30 ? 15 : 0)
+      - (articlesNegatifs.length > 0 ? Math.min(30, articlesNegatifs.length * 5) : 0)
+      - (methodeMixte ? 15 : 0)
+      - (articlesSansUDM.length > 5 ? 10 : 0)
+    ),
+  };
+
+  // ── SÉCURITÉ ÉTENDUE ───────────────────────────────
+  const users       = data.users || [];
+  const userPerms   = data.userPermissions || [];
+
+  // Utilisateurs inactifs +90j
+  const inactifs90j = users.filter(u => {
+    const last = parse(u.lastModifiedDateTime || u.lastLoginDate);
+    return last && last < d90;
+  });
+
+  // Utilisateurs sans profil
+  const sansProfile = users.filter(u => !u.profileId && !u.profile);
+
+  // Ratio SUPER
+  const superUsers  = users.filter(u => {
+    const perms = userPerms.filter(p=>p.userId===u.id||p.userSecurityId===u.userSecurityId);
+    return perms.some(p=>(p.permissionSetId||'').toUpperCase().includes('SUPER')||
+                         (p.permissionSetId||'').includes('FULL ACCESS'));
+  });
+  const ratioSuper  = pct(superUsers.length, users.length||1);
+
+  // SOD étendu — 8 règles
+  const sodRulesExtended = [
+    {id:'SOD001',label:'Acheteur + Paiement fournisseurs',gravite:'critique',
+     permA:['PURCHASES-PAYABLES','PURCH PAY','PURCHASE ORDER','D365 PURCH'],
+     permB:['PAYMENT JOURNAL','PMT JOURNAL','BANK ACCOUNT']},
+    {id:'SOD002',label:'Création clients + Encaissement',gravite:'critique',
+     permA:['CUSTOMER','D365 SALES','SALES ORDER'],
+     permB:['CASH RECEIPT','PAYMENT JOURNAL','BANK ACCOUNT']},
+    {id:'SOD003',label:'Création fournisseurs + Paiement',gravite:'critique',
+     permA:['VENDOR','D365 PURCH'],
+     permB:['PAYMENT JOURNAL','PMT JOURNAL']},
+    {id:'SOD004',label:'Saisie écritures + Validation',gravite:'critique',
+     permA:['GENERAL JOURNAL','JOURNAL'],
+     permB:['POST JOURNAL','D365 FINANCE']},
+    {id:'SOD005',label:'Gestion stocks + Valorisation',gravite:'attention',
+     permA:['ITEM','INVENTORY','WAREHOUSE'],
+     permB:['ITEM COST','ADJUST COST','D365 FINANCE']},
+    {id:'SOD006',label:'Création articles + Prix de vente',gravite:'attention',
+     permA:['ITEM CREATE','INVENTORY'],
+     permB:['SALES PRICE','PRICE LIST']},
+    {id:'SOD007',label:'Acheteur + Réception marchandises',gravite:'attention',
+     permA:['PURCHASE ORDER','D365 PURCH'],
+     permB:['WAREHOUSE RECEIPT','PURCH RECEIVE']},
+    {id:'SOD008',label:'Admin utilisateurs + Saisie financière',gravite:'critique',
+     permA:['SECURITY','USER SETUP','D365 BASIC'],
+     permB:['GENERAL JOURNAL','PAYMENT JOURNAL','D365 FINANCE']},
+  ];
+
+  const conflitsSOD = [];
+  users.forEach(u => {
+    const perms = userPerms.filter(p=>p.userId===u.id||p.userSecurityId===u.userSecurityId);
+    const permNames = perms.map(p=>(p.permissionSetId||'').toUpperCase());
+    const userName = u.displayName||u.userName||u.id;
+    sodRulesExtended.forEach(rule => {
+      const hasA = rule.permA.some(pa=>permNames.some(p=>p.includes(pa)));
+      const hasB = rule.permB.some(pb=>permNames.some(p=>p.includes(pb)));
+      if (hasA && hasB) conflitsSOD.push({...rule, userName});
+    });
+  });
+
+  const securite = {
+    totalUsers: users.length,
+    nbInactifs90j: inactifs90j.length,
+    pctInactifs: pct(inactifs90j.length, users.length||1),
+    nbSansProfile: sansProfile.length,
+    nbSuperUsers: superUsers.length,
+    ratioSuper,
+    nbConflitsSOD: conflitsSOD.length,
+    conflitsCritiques: conflitsSOD.filter(c=>c.gravite==='critique').length,
+    conflitsAttention: conflitsSOD.filter(c=>c.gravite==='attention').length,
+    conflitsSOD,
+    scoreSecurite: Math.max(0, 100
+      - (ratioSuper > 30 ? 25 : ratioSuper > 10 ? 12 : 0)
+      - (conflitsSOD.filter(c=>c.gravite==='critique').length * 15)
+      - (conflitsSOD.filter(c=>c.gravite==='attention').length * 8)
+      - (pct(inactifs90j.length, users.length||1) > 20 ? 10 : 0)
+      - (sansProfile.length > 2 ? 10 : 0)
+    ),
+  };
+
+  return { finance, achats, ventes, stock, securite };
+}
 function computeKPIs(data) {
   const now = new Date();
   const d30 = new Date(now - 30*24*3600*1000);
@@ -1062,8 +1397,9 @@ async function fetchBCData(cid){
   ];
   // Endpoints KPI supplémentaires
   const kpiEps=[
-    ['/api/v2.0/companies('+cid+')/salesInvoices?$top=200&$orderby=invoiceDate desc','salesInvoices'],
-    ['/api/v2.0/companies('+cid+')/purchaseInvoices?$top=200&$orderby=invoiceDate desc','purchaseInvoices'],
+    // Factures & paiements
+    ['/api/v2.0/companies('+cid+')/salesInvoices?$top=300&$orderby=invoiceDate desc','salesInvoices'],
+    ['/api/v2.0/companies('+cid+')/purchaseInvoices?$top=300&$orderby=invoiceDate desc','purchaseInvoices'],
     ['/api/v2.0/companies('+cid+')/salesCreditMemos?$top=100','salesCreditMemos'],
     ['/api/v2.0/companies('+cid+')/purchaseCreditMemos?$top=100','purchaseCreditMemos'],
     ['/api/v2.0/companies('+cid+')/customerPayments?$top=200&$orderby=postingDate desc','customerPayments'],
@@ -1071,6 +1407,20 @@ async function fetchBCData(cid){
     ['/api/v2.0/companies('+cid+')/salesShipments?$top=100','salesShipments'],
     ['/api/v2.0/companies('+cid+')/itemLedgerEntries?$top=500&$orderby=postingDate desc','itemLedgerEntries'],
     ['/api/v2.0/companies('+cid+')/budgets?$top=50','budgets'],
+    // Finance
+    ['/api/v2.0/companies('+cid+')/generalJournals?$top=100','generalJournals'],
+    ['/api/v2.0/companies('+cid+')/accountingPeriods?$top=50','accountingPeriods'],
+    ['/api/v2.0/companies('+cid+')/paymentTerms?$top=50','paymentTerms'],
+    // Achats enrichis
+    ['/api/v2.0/companies('+cid+')/purchaseOrders?$top=200','purchaseOrdersOpen'],
+    ['/api/v2.0/companies('+cid+')/purchaseReceipts?$top=100','purchaseReceipts'],
+    // Ventes enrichies
+    ['/api/v2.0/companies('+cid+')/salesQuotes?$top=200','salesQuotes'],
+    ['/api/v2.0/companies('+cid+')/salesOrders?$top=200','salesOrdersOpen'],
+    // Stock enrichi
+    ['/api/v2.0/companies('+cid+')/itemCategories?$top=100','itemCategories'],
+    ['/api/v2.0/companies('+cid+')/unitsOfMeasure?$top=50','unitsOfMeasure'],
+    ['/api/v2.0/companies('+cid+')/locations?$top=50','locations'],
     ['/api/v2.0/companies('+cid+')/inventoryPostingGroups?$top=50','inventoryPostingGroups'],
   ];
   const r={};
@@ -1088,6 +1438,7 @@ async function fetchBCData(cid){
   for(const[p,k]of kpiEps){try{const d=await bcGet(p);r[k]=d.value||[]}catch{r[k]=[]}}
   // Calcul KPI
   r.kpiAnalysis = computeKPIs(r);
+  r.deepAnalysis = computeDeepAnalysis(r);
   return r;
 }
 
@@ -1107,6 +1458,7 @@ function buildPrompt(name,env,types,data,ctx){
     comptes_bloques:data.accounts?.filter(a=>a.blocked).length??0,
   };
   const modulesList=[...types].join(', ');
+  const deep=data.deepAnalysis||{};
   const sod=data.sodAnalysis||{};
   const kpi=data.kpiAnalysis||{};
   const kpiSummary={
@@ -1175,10 +1527,7 @@ RÉPONSES CONSULTANT PRÉ-AUDIT:
 DONNÉES RÉELLES EXTRAITES DE BC:
 ${JSON.stringify(s,null,2)}
 
-KPI D'UTILISATION ERP:
-${JSON.stringify(kpiSummary,null,2)}
-
-ANALYSE SÉCURITÉ & SOD (Ségrégation des Tâches):
+KPI D'UTILISATION ERP:\n${JSON.stringify(kpiSummary,null,2)}\n\nANALYSE APPROFONDIE PAR MODULE (données réelles BC):\n=== FINANCE === Score calculé: ${deep.finance?.scoreFinance??'N/A'}/100\n- Journaux non validés: ${deep.finance?.nbJournauxOuverts??0} | Périodes ouvertes trop longtemps: ${deep.finance?.nbPeriodesOuvertesTrop??0}\n- Comptes sans mouvement 12 mois: ${deep.finance?.nbComptesSansMvt12m??0} (${deep.finance?.pctComptesSansMvt??0}%) | Écritures antidatées +6m: ${deep.finance?.nbEcrituresAntidatees??0}\n- Ratio écritures manuelles: ${deep.finance?.ratioEcrituresManuelles??0}% | Comptes sans groupe comptabilisation: ${deep.finance?.nbComptesSansGroupe??0}\n=== ACHATS === Score calculé: ${deep.achats?.scoreAchats??'N/A'}/100\n- Factures sans PO: ${deep.achats?.nbFacturesSansPO??0} (${deep.achats?.pctFacturesSansPO??0}%) | Fournisseurs sans conditions paiement: ${deep.achats?.nbVendorsSansPaymentTerms??0} (${deep.achats?.pctVendorsSansPaymentTerms??0}%)\n- Fournisseurs sans banque: ${deep.achats?.nbVendorsSansBank??0} | Réceptions non facturées +30j: ${deep.achats?.nbReceptionsNonFacturees??0}\n- Factures échues: ${deep.achats?.nbFacturesEchues??0} | Concentration top3 fournisseurs: ${deep.achats?.concentrationFournisseurs??0}%\n=== VENTES === Score calculé: ${deep.ventes?.scoreVentes??'N/A'}/100\n- Devis expirés: ${deep.ventes?.nbDevisExpires??0} | Taux conversion: ${deep.ventes?.tauxConversionDevis??0}%\n- Clients sans limite crédit: ${deep.ventes?.nbClientsSansCredit??0} (${deep.ventes?.pctClientsSansCredit??0}%) | Factures échues +60j: ${deep.ventes?.nbFacturesEchues60j??0}\n- Concentration top3 clients: ${deep.ventes?.concentrationClients??0}% | DSO réel: ${deep.ventes?.dsoReel??'N/A'} jours\n=== STOCK === Score calculé: ${deep.stock?.scoreStock??'N/A'}/100\n- Articles sans prix vente: ${deep.stock?.nbArticlesSansPrixVente??0} (${deep.stock?.pctArticlesSansPrixVente??0}%) | Sans catégorie: ${deep.stock?.nbArticlesSansCategorie??0} (${deep.stock?.pctArticlesSansCategorie??0}%)\n- Sans UDM: ${deep.stock?.nbArticlesSansUDM??0} | Méthode coût mixte: ${deep.stock?.methodeMixte?'OUI '+deep.stock.methodes:'Non'}\n- Stock négatif: ${deep.stock?.nbArticlesNegatifs??0} articles valeur ${deep.stock?.valeurNegativeTotale??0}€\n=== SÉCURITÉ === Score calculé: ${deep.securite?.scoreSecurite??'N/A'}/100\n- Inactifs +90j: ${deep.securite?.nbInactifs90j??0} (${deep.securite?.pctInactifs??0}%) | Sans profil: ${deep.securite?.nbSansProfile??0}\n- Ratio SUPER: ${deep.securite?.ratioSuper??0}% | SOD critiques: ${deep.securite?.conflitsCritiques??0} | SOD attention: ${deep.securite?.conflitsAttention??0}\n- Détail SOD: ${(deep.securite?.conflitsSOD||[]).slice(0,5).map(c=>c.userName+':'+c.label).join(' | ')||'aucun'}\n\nINSTRUCTION CRITIQUE: Utilise UNIQUEMENT ces chiffres réels dans tes findings. Score module = score calculé ±10pts max selon contexte. Génère minimum 4-5 findings détaillés et actionnables par module avec le chiffre exact cité.\n\nANALYSE SÉCURITÉ & SOD (Ségrégation des Tâches):
 ${JSON.stringify(secSummary,null,2)}
 
 RÈGLES SOD VÉRIFIÉES:
