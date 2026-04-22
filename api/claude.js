@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GROQ_API_KEY}` },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        max_tokens: 3000,
+        max_tokens: 4000,
         temperature: 0.3,
         messages: [
           { role: 'system', content: 'Tu es un expert ERP Microsoft Business Central certifié avec 15 ans d\'expérience dans les PME européennes. Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans balises, sans texte avant ou après le JSON.' },
