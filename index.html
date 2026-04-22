@@ -11,9 +11,9 @@
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b67;--text3:#9c9a92;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);--blue:#378ADD;--blue-bg:#E6F1FB;--blue-dark:#0C447C;--blue-mid:#185FA5;--green-bg:#EAF3DE;--green:#3B6D11;--red-bg:#FCEBEB;--red:#A32D2D;--amber-bg:#FAEEDA;--amber:#633806;--purple-bg:#EEEDFE;--purple:#3C3489;--radius:12px;--radius-sm:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     @media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2c;--text:#e8e6df;--text2:#9c9a92;--text3:#6b6b67;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);--blue-bg:#0c2340;--blue-dark:#85B7EB;--blue-mid:#85B7EB;--green-bg:#0f2009;--green:#97C459;--red-bg:#2a0a0a;--red:#F09595;--amber-bg:#2a1800;--amber:#FAC775;--purple-bg:#1a1840;--purple:#AFA9EC}}
-    body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:100vh}
+    body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:100vh;overflow-x:hidden}
     .page{max-width:760px;margin:0 auto;padding:2rem 1rem 4rem}
-    .logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+    .logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;overflow:hidden}
     .logo-icon{width:36px;height:36px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center}
     .logo-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round}
     .logo-text{font-size:18px;font-weight:600;color:var(--text)}
@@ -171,7 +171,7 @@
   <div class="auth-box">
     <div class="auth-logo">
       <div style="width:72px;height:72px;display:flex;align-items:center;justify-content:center">
-        <svg width="72" height="72" viewBox="0 0 200 200" fill="none">
+        <svg width="72" height="72" viewBox="0 0 200 200" fill="none" style="overflow:hidden">
           <defs>
             <linearGradient id="authHex" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#4a7fa5"/><stop offset="100%" stop-color="#1ec8b0"/>
@@ -224,35 +224,36 @@
 
 <div class="page" id="mainApp" style="display:none">
   <div class="logo">
-    <div style="flex-shrink:0"><svg width="38" height="38" viewBox="0 0 200 200" fill="none">
-  <defs>
-    <linearGradient id="navHex" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#4a7fa5"/><stop offset="100%" stop-color="#1ec8b0"/>
-    </linearGradient>
-    <radialGradient id="navGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#2de8cc" stop-opacity=".5"/>
-      <stop offset="100%" stop-color="#1ec8b0" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <polygon points="100,18 182,59 182,141 100,182 18,141 18,59" fill="none" stroke="url(#navHex)" stroke-width="7"/>
-  <circle cx="100" cy="100" r="36" fill="url(#navGlow)"/>
-  <circle cx="100" cy="100" r="13" fill="#2de8cc"/>
-  <circle cx="100" cy="100" r="6" fill="#fff" opacity=".45"/>
-  <line x1="100" y1="100" x2="100" y2="36" stroke="url(#navHex)" stroke-width="4" opacity=".6"/>
-  <line x1="100" y1="100" x2="155" y2="68" stroke="url(#navHex)" stroke-width="4" opacity=".6"/>
-  <line x1="100" y1="100" x2="155" y2="132" stroke="url(#navHex)" stroke-width="4" opacity=".5"/>
-  <line x1="100" y1="100" x2="100" y2="164" stroke="url(#navHex)" stroke-width="4" opacity=".5"/>
-  <line x1="100" y1="100" x2="45" y2="132" stroke="url(#navHex)" stroke-width="4" opacity=".5"/>
-  <line x1="100" y1="100" x2="45" y2="68" stroke="url(#navHex)" stroke-width="4" opacity=".6"/>
-  <circle cx="100" cy="36" r="6" fill="#4a9fb5"/>
-  <circle cx="155" cy="68" r="5" fill="#4a9fb5"/>
-  <circle cx="155" cy="132" r="5" fill="#3a8fa5"/>
-  <circle cx="100" cy="164" r="6" fill="#4a9fb5"/>
-  <circle cx="45" cy="132" r="5" fill="#3a8fa5"/>
-  <circle cx="45" cy="68" r="5" fill="#4a9fb5"/>
-</svg></div>
-    <div>
-      <div style="font-size:19px;font-weight:700;letter-spacing:-.3px;line-height:1.2">
+    <svg width="36" height="36" viewBox="0 0 200 200" fill="none" style="flex-shrink:0;overflow:hidden">
+      <defs>
+        <linearGradient id="L1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#4a7fa5"/>
+          <stop offset="100%" stop-color="#1ec8b0"/>
+        </linearGradient>
+        <radialGradient id="L2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#2de8cc" stop-opacity=".45"/>
+          <stop offset="100%" stop-color="#2de8cc" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <polygon points="100,20 178,60 178,140 100,180 22,140 22,60" fill="none" stroke="url(#L1)" stroke-width="8"/>
+      <circle cx="100" cy="100" r="34" fill="url(#L2)"/>
+      <line x1="100" y1="100" x2="100" y2="40" stroke="url(#L1)" stroke-width="4" opacity=".55"/>
+      <line x1="100" y1="100" x2="152" y2="70" stroke="url(#L1)" stroke-width="4" opacity=".55"/>
+      <line x1="100" y1="100" x2="152" y2="130" stroke="url(#L1)" stroke-width="4" opacity=".45"/>
+      <line x1="100" y1="100" x2="100" y2="160" stroke="url(#L1)" stroke-width="4" opacity=".45"/>
+      <line x1="100" y1="100" x2="48" y2="130" stroke="url(#L1)" stroke-width="4" opacity=".45"/>
+      <line x1="100" y1="100" x2="48" y2="70" stroke="url(#L1)" stroke-width="4" opacity=".55"/>
+      <circle cx="100" cy="40" r="7" fill="#4a9fb5"/>
+      <circle cx="152" cy="70" r="6" fill="#4a9fb5"/>
+      <circle cx="152" cy="130" r="6" fill="#3a8fa5"/>
+      <circle cx="100" cy="160" r="7" fill="#4a9fb5"/>
+      <circle cx="48" cy="130" r="6" fill="#3a8fa5"/>
+      <circle cx="48" cy="70" r="6" fill="#4a9fb5"/>
+      <circle cx="100" cy="100" r="14" fill="#2de8cc"/>
+      <circle cx="100" cy="100" r="7" fill="#fff" opacity=".4"/>
+    </svg>
+    <div style="min-width:0">
+      <div style="font-size:18px;font-weight:700;letter-spacing:-.3px;line-height:1.2;white-space:nowrap">
         <span style="color:#5b8db8">ERP</span><span style="color:#4a9fb5;font-weight:300">Lens</span><span style="color:#1ec8b0;font-weight:700">IQ</span>
       </div>
       <div class="logo-sub">Business Central · Powered by AI</div>
