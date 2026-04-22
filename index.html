@@ -737,6 +737,226 @@ async function testConnection(){
 
 // Calcul des KPI d'utilisation ERP
 
+
+// ════════════════════════════════════════════════════
+// ANALYSE COMPTABLE — COMPTES AUXILIAIRES
+// Vérifie cohérence balance GL vs auxiliaires
+// Détecte imputations directes sur comptes collectifs
+// ════════════════════════════════════════════════════
+function computeAuxiliairesAnalysis(data) {
+  const accounts       = data.accounts || [];
+  const glEntries      = data.glEntries || [];
+  const custLedger     = data.customerLedgerEntries || [];
+  const vendLedger     = data.vendorLedgerEntries || [];
+  const bankAccounts   = data.bankAccounts || [];
+  const bankLedger     = data.bankLedgerEntries || [];
+  const faLedger       = data.fixedAssetLedgerEntries || [];
+  const itemLedger     = data.itemLedgerEntries || [];
+  const customers      = data.customers || [];
+  const vendors        = data.vendors || [];
+  const fixedAssets    = data.fixedAssets || [];
+  const items          = data.items || [];
+
+  const round2 = v => Math.round((v||0)*100)/100;
+
+  // ── IDENTIFICATION DES COMPTES COLLECTIFS ──────────
+  // BC utilise des comptes spéciaux pour chaque auxiliaire
+  // On les identifie par leur type ou leur association
+
+  // Comptes clients collectifs (liés aux clients)
+  const comptesClients = accounts.filter(a =>
+    a.accountSubcategoryId && (
+      (a.name||'').toUpperCase().includes('CLIENT') ||
+      (a.name||'').toUpperCase().includes('CUSTOMER') ||
+      (a.name||'').toUpperCase().includes('DÉBITEUR') ||
+      (a.accountType === 'Posting' && a.directPosting === false && customers.some(c => c.customerPostingGroup))
+    )
+  );
+
+  // Comptes fournisseurs collectifs
+  const comptesFournisseurs = accounts.filter(a =>
+    a.accountType === 'Posting' && (
+      (a.name||'').toUpperCase().includes('FOURNISSEUR') ||
+      (a.name||'').toUpperCase().includes('VENDOR') ||
+      (a.name||'').toUpperCase().includes('CRÉANCIER') ||
+      (a.name||'').toUpperCase().includes('CRANCIER')
+    )
+  );
+
+  // Comptes bancaires collectifs
+  const comptesBanque = accounts.filter(a =>
+    (a.name||'').toUpperCase().includes('BANQUE') ||
+    (a.name||'').toUpperCase().includes('BANK') ||
+    (a.name||'').toUpperCase().includes('TRÉSORERIE') ||
+    (a.name||'').toUpperCase().includes('TRESORERIE') ||
+    (a.number||'').startsWith('51') ||  // Plan comptable français
+    (a.number||'').startsWith('512') ||
+    (a.number||'').startsWith('52')
+  );
+
+  // Comptes immobilisations
+  const comptesImmo = accounts.filter(a =>
+    (a.name||'').toUpperCase().includes('IMMOBILI') ||
+    (a.name||'').toUpperCase().includes('FIXED ASSET') ||
+    (a.number||'').startsWith('2') && a.accountType === 'Posting'
+  );
+
+  // Comptes stock
+  const comptesStock = accounts.filter(a =>
+    (a.name||'').toUpperCase().includes('STOCK') ||
+    (a.name||'').toUpperCase().includes('INVENTAIRE') ||
+    (a.name||'').toUpperCase().includes('INVENTORY') ||
+    (a.name||'').toUpperCase().includes('MARCHANDISE') ||
+    (a.number||'').startsWith('3') && a.accountType === 'Posting'
+  );
+
+  // ── DÉTECTION IMPUTATIONS DIRECTES ─────────────────
+  // Une imputation directe = écriture GL sur un compte collectif
+  // sans passer par le module auxiliaire correspondant
+  // Anomalie grave : ecart balance GL / auxiliaire
+
+  // Numéros de comptes collectifs identifiés
+  const numComptesClients     = new Set(comptesClients.map(a => a.number));
+  const numComptesFourn       = new Set(comptesFournisseurs.map(a => a.number));
+  const numComptesBanque      = new Set(comptesBanque.map(a => a.number));
+  const numComptesImmo        = new Set(comptesImmo.map(a => a.number));
+  const numComptesStock       = new Set(comptesStock.map(a => a.number));
+
+  // Écritures GL directes sur comptes collectifs
+  // (source = General Journal, pas Sales/Purchase/Bank)
+  const imputationsDirectes = {
+    clients: [],
+    fournisseurs: [],
+    banque: [],
+    immobilisations: [],
+    stock: [],
+  };
+
+  glEntries.forEach(e => {
+    const num = e.accountNumber || e.gLAccountNumber || '';
+    const source = (e.sourceType || e.documentType || '').toUpperCase();
+    const isManuel = source === '' || source === 'GENERAL JOURNAL' || source === ' ';
+
+    if (isManuel) {
+      if (numComptesClients.has(num)) imputationsDirectes.clients.push(e);
+      if (numComptesFourn.has(num)) imputationsDirectes.fournisseurs.push(e);
+      if (numComptesBanque.has(num)) imputationsDirectes.banque.push(e);
+      if (numComptesImmo.has(num)) imputationsDirectes.immobilisations.push(e);
+      if (numComptesStock.has(num)) imputationsDirectes.stock.push(e);
+    }
+  });
+
+  // ── CALCUL BALANCES GL PAR COMPTE COLLECTIF ────────
+  const calcBalanceGL = (numSet) => {
+    let balance = 0;
+    glEntries.forEach(e => {
+      if (numSet.has(e.accountNumber || e.gLAccountNumber || '')) {
+        balance += (parseFloat(e.debitAmount)||0) - (parseFloat(e.creditAmount)||0);
+      }
+    });
+    return round2(balance);
+  };
+
+  // ── CALCUL BALANCES AUXILIAIRES ────────────────────
+  // Balance auxiliaire clients
+  const balAuxClients = round2(
+    custLedger.reduce((s,e) => s + (parseFloat(e.remainingAmount)||parseFloat(e.amount)||0), 0)
+  );
+
+  // Balance auxiliaire fournisseurs
+  const balAuxFourn = round2(
+    vendLedger.reduce((s,e) => s + (parseFloat(e.remainingAmount)||parseFloat(e.amount)||0), 0)
+  );
+
+  // Balance auxiliaire banque
+  const balAuxBanque = round2(
+    bankAccounts.reduce((s,b) => s + (parseFloat(b.balance)||parseFloat(b.currentBalance)||0), 0)
+  );
+
+  // Balance auxiliaire immobilisations (valeur nette)
+  const balAuxImmo = round2(
+    faLedger.reduce((s,e) => s + (parseFloat(e.amount)||0), 0)
+  );
+
+  // Balance auxiliaire stock (cumul mouvements valorisés)
+  const balAuxStock = round2(
+    itemLedger.reduce((s,e) => s + (parseFloat(e.costAmount)||parseFloat(e.invoicedQuantity)||0), 0)
+  );
+
+  // ── BALANCES GL ────────────────────────────────────
+  const balGLClients = calcBalanceGL(numComptesClients);
+  const balGLFourn   = calcBalanceGL(numComptesFourn);
+  const balGLBanque  = calcBalanceGL(numComptesBanque);
+  const balGLImmo    = calcBalanceGL(numComptesImmo);
+  const balGLStock   = calcBalanceGL(numComptesStock);
+
+  // ── ÉCARTS BALANCE GL / AUXILIAIRE ─────────────────
+  const ecartClients = round2(balGLClients - balAuxClients);
+  const ecartFourn   = round2(balGLFourn - balAuxFourn);
+  const ecartBanque  = round2(balGLBanque - balAuxBanque);
+  const ecartImmo    = round2(balGLImmo - balAuxImmo);
+  const ecartStock   = round2(balGLStock - balAuxStock);
+
+  // Seuil alerte : ecart > 0.01 = anomalie
+  const SEUIL = 0.01;
+
+  const ecarts = [
+    { auxiliaire: 'Clients',          balGL: balGLClients, balAux: balAuxClients, ecart: ecartClients,  comptes: comptesClients.length,     imputations: imputationsDirectes.clients.length },
+    { auxiliaire: 'Fournisseurs',     balGL: balGLFourn,   balAux: balAuxFourn,   ecart: ecartFourn,    comptes: comptesFournisseurs.length, imputations: imputationsDirectes.fournisseurs.length },
+    { auxiliaire: 'Banque/Trésorerie',balGL: balGLBanque,  balAux: balAuxBanque,  ecart: ecartBanque,   comptes: comptesBanque.length,       imputations: imputationsDirectes.banque.length },
+    { auxiliaire: 'Immobilisations',  balGL: balGLImmo,    balAux: balAuxImmo,    ecart: ecartImmo,     comptes: comptesImmo.length,         imputations: imputationsDirectes.immobilisations.length },
+    { auxiliaire: 'Stock/Inventaire', balGL: balGLStock,   balAux: balAuxStock,   ecart: ecartStock,    comptes: comptesStock.length,        imputations: imputationsDirectes.stock.length },
+  ];
+
+  // ── COMPTES AVEC IMPUTATION DIRECTE AUTORISÉE ──────
+  // BC a un champ "Direct Posting" sur les comptes
+  const comptesDirectPostingOui = accounts.filter(a => a.directPosting === true || a.directPosting === 'true');
+  const comptesDirectPostingNon = accounts.filter(a => a.directPosting === false || a.directPosting === 'false');
+
+  // Comptes collectifs avec Direct Posting = Oui (ANOMALIE de paramétrage)
+  const collectifsAvecDirectPosting = accounts.filter(a => {
+    const num = a.number || '';
+    const isCollectif = numComptesClients.has(num) || numComptesFourn.has(num) ||
+                        numComptesBanque.has(num) || numComptesImmo.has(num) || numComptesStock.has(num);
+    return isCollectif && (a.directPosting === true || a.directPosting === 'true');
+  });
+
+  // ── SCORE ───────────────────────────────────────────
+  const nbEcarts   = ecarts.filter(e => Math.abs(e.ecart) > SEUIL).length;
+  const nbImputDir = ecarts.reduce((s,e) => s + e.imputations, 0);
+  const scoreAux = Math.max(0, 100
+    - (nbEcarts * 20)
+    - (nbImputDir > 0 ? Math.min(30, nbImputDir * 5) : 0)
+    - (collectifsAvecDirectPosting.length > 0 ? 15 : 0)
+  );
+
+  return {
+    ecarts,
+    nbEcarts,
+    imputationsDirectes: {
+      clients:       imputationsDirectes.clients.length,
+      fournisseurs:  imputationsDirectes.fournisseurs.length,
+      banque:        imputationsDirectes.banque.length,
+      immobilisations: imputationsDirectes.immobilisations.length,
+      stock:         imputationsDirectes.stock.length,
+      total: Object.values(imputationsDirectes).reduce((s,a) => s+a.length, 0),
+    },
+    directPosting: {
+      nbComptesOui:  comptesDirectPostingOui.length,
+      nbComptesNon:  comptesDirectPostingNon.length,
+      nbCollectifsAnomalie: collectifsAvecDirectPosting.length,
+      collectifsAnomalie: collectifsAvecDirectPosting.slice(0,10).map(a=>({numero:a.number,nom:a.name})),
+    },
+    comptes: {
+      nbClients: comptesClients.length,
+      nbFourn:   comptesFournisseurs.length,
+      nbBanque:  comptesBanque.length,
+      nbImmo:    comptesImmo.length,
+      nbStock:   comptesStock.length,
+    },
+    scoreAux,
+  };
+}
 // ════════════════════════════════════════════════════
 // ANALYSE APPROFONDIE PAR MODULE
 // ════════════════════════════════════════════════════
@@ -1429,6 +1649,12 @@ async function fetchBCData(cid){
     ['/api/v2.0/companies('+cid+')/generalJournals?$top=100','generalJournals'],
     ['/api/v2.0/companies('+cid+')/accountingPeriods?$top=50','accountingPeriods'],
     ['/api/v2.0/companies('+cid+')/paymentTerms?$top=50','paymentTerms'],
+    // Auxiliaires comptables
+    ['/api/v2.0/companies('+cid+')/customerLedgerEntries?$top=500&$orderby=postingDate desc','customerLedgerEntries'],
+    ['/api/v2.0/companies('+cid+')/vendorLedgerEntries?$top=500&$orderby=postingDate desc','vendorLedgerEntries'],
+    ['/api/v2.0/companies('+cid+')/bankAccounts?$top=50','bankAccounts'],
+    ['/api/v2.0/companies('+cid+')/bankAccountLedgerEntries?$top=300&$orderby=postingDate desc','bankLedgerEntries'],
+    ['/api/v2.0/companies('+cid+')/fixedAssetLedgerEntries?$top=300&$orderby=postingDate desc','fixedAssetLedgerEntries'],
     // Achats enrichis
     ['/api/v2.0/companies('+cid+')/purchaseOrders?$top=200','purchaseOrdersOpen'],
     ['/api/v2.0/companies('+cid+')/purchaseReceipts?$top=100','purchaseReceipts'],
@@ -1457,6 +1683,7 @@ async function fetchBCData(cid){
   // Calcul KPI
   r.kpiAnalysis = computeKPIs(r);
   r.deepAnalysis = computeDeepAnalysis(r);
+  r.auxAnalysis = computeAuxiliairesAnalysis(r);
   return r;
 }
 
@@ -1477,6 +1704,7 @@ function buildPrompt(name,env,types,data,ctx){
   };
   const modulesList=[...types].join(', ');
   const deep=data.deepAnalysis||{};
+  const aux=data.auxAnalysis||{};
   const sod=data.sodAnalysis||{};
   const kpi=data.kpiAnalysis||{};
   const kpiSummary={
@@ -1545,7 +1773,19 @@ RÉPONSES CONSULTANT PRÉ-AUDIT:
 DONNÉES RÉELLES EXTRAITES DE BC:
 ${JSON.stringify(s,null,2)}
 
-KPI D'UTILISATION ERP:\n${JSON.stringify(kpiSummary,null,2)}\n\nANALYSE APPROFONDIE PAR MODULE (données réelles BC):\n=== FINANCE === Score calculé: ${deep.finance?.scoreFinance??'N/A'}/100\n- Journaux non validés: ${deep.finance?.nbJournauxOuverts??0} | Périodes ouvertes trop longtemps: ${deep.finance?.nbPeriodesOuvertesTrop??0}\n- Comptes sans mouvement 12 mois: ${deep.finance?.nbComptesSansMvt12m??0} (${deep.finance?.pctComptesSansMvt??0}%) | Écritures antidatées +6m: ${deep.finance?.nbEcrituresAntidatees??0}\n- Ratio écritures manuelles: ${deep.finance?.ratioEcrituresManuelles??0}% | Comptes sans groupe comptabilisation: ${deep.finance?.nbComptesSansGroupe??0}\n=== ACHATS === Score calculé: ${deep.achats?.scoreAchats??'N/A'}/100\n- Factures sans PO: ${deep.achats?.nbFacturesSansPO??0} (${deep.achats?.pctFacturesSansPO??0}%) | Fournisseurs sans conditions paiement: ${deep.achats?.nbVendorsSansPaymentTerms??0} (${deep.achats?.pctVendorsSansPaymentTerms??0}%)\n- Fournisseurs sans banque: ${deep.achats?.nbVendorsSansBank??0} | Réceptions non facturées +30j: ${deep.achats?.nbReceptionsNonFacturees??0}\n- Factures échues: ${deep.achats?.nbFacturesEchues??0} | Concentration top3 fournisseurs: ${deep.achats?.concentrationFournisseurs??0}%\n=== VENTES === Score calculé: ${deep.ventes?.scoreVentes??'N/A'}/100\n- Devis expirés: ${deep.ventes?.nbDevisExpires??0} | Taux conversion: ${deep.ventes?.tauxConversionDevis??0}%\n- Clients sans limite crédit: ${deep.ventes?.nbClientsSansCredit??0} (${deep.ventes?.pctClientsSansCredit??0}%) | Factures échues +60j: ${deep.ventes?.nbFacturesEchues60j??0}\n- Concentration top3 clients: ${deep.ventes?.concentrationClients??0}% | DSO réel: ${deep.ventes?.dsoReel??'N/A'} jours\n=== STOCK === Score calculé: ${deep.stock?.scoreStock??'N/A'}/100\n- Articles sans prix vente: ${deep.stock?.nbArticlesSansPrixVente??0} (${deep.stock?.pctArticlesSansPrixVente??0}%) | Sans catégorie: ${deep.stock?.nbArticlesSansCategorie??0} (${deep.stock?.pctArticlesSansCategorie??0}%)\n- Sans UDM: ${deep.stock?.nbArticlesSansUDM??0} | Méthode coût mixte: ${deep.stock?.methodeMixte?'OUI '+deep.stock.methodes:'Non'}\n- Stock négatif: ${deep.stock?.nbArticlesNegatifs??0} articles valeur ${deep.stock?.valeurNegativeTotale??0}€\n=== SÉCURITÉ === Score calculé: ${deep.securite?.scoreSecurite??'N/A'}/100\n- Inactifs +90j: ${deep.securite?.nbInactifs90j??0} (${deep.securite?.pctInactifs??0}%) | Sans profil: ${deep.securite?.nbSansProfile??0}\n- Ratio SUPER: ${deep.securite?.ratioSuper??0}% | SOD critiques: ${deep.securite?.conflitsCritiques??0} | SOD attention: ${deep.securite?.conflitsAttention??0}\n- Détail SOD: ${(deep.securite?.conflitsSOD||[]).slice(0,5).map(c=>c.userName+':'+c.label).join(' | ')||'aucun'}\n\nINSTRUCTION CRITIQUE: Utilise UNIQUEMENT ces chiffres réels dans tes findings. Score module = score calculé ±10pts max selon contexte. Génère minimum 4-5 findings détaillés et actionnables par module avec le chiffre exact cité.\n\nANALYSE SÉCURITÉ & SOD (Ségrégation des Tâches):
+KPI D'UTILISATION ERP:\n${JSON.stringify(kpiSummary,null,2)}\n\nANALYSE APPROFONDIE PAR MODULE (données réelles BC):\n=== FINANCE === Score calculé: ${deep.finance?.scoreFinance??'N/A'}/100\n- Journaux non validés: ${deep.finance?.nbJournauxOuverts??0} | Périodes ouvertes trop longtemps: ${deep.finance?.nbPeriodesOuvertesTrop??0}\n- Comptes sans mouvement 12 mois: ${deep.finance?.nbComptesSansMvt12m??0} (${deep.finance?.pctComptesSansMvt??0}%) | Écritures antidatées +6m: ${deep.finance?.nbEcrituresAntidatees??0}\n- Ratio écritures manuelles: ${deep.finance?.ratioEcrituresManuelles??0}% | Comptes sans groupe comptabilisation: ${deep.finance?.nbComptesSansGroupe??0}\n=== ACHATS === Score calculé: ${deep.achats?.scoreAchats??'N/A'}/100\n- Factures sans PO: ${deep.achats?.nbFacturesSansPO??0} (${deep.achats?.pctFacturesSansPO??0}%) | Fournisseurs sans conditions paiement: ${deep.achats?.nbVendorsSansPaymentTerms??0} (${deep.achats?.pctVendorsSansPaymentTerms??0}%)\n- Fournisseurs sans banque: ${deep.achats?.nbVendorsSansBank??0} | Réceptions non facturées +30j: ${deep.achats?.nbReceptionsNonFacturees??0}\n- Factures échues: ${deep.achats?.nbFacturesEchues??0} | Concentration top3 fournisseurs: ${deep.achats?.concentrationFournisseurs??0}%\n=== VENTES === Score calculé: ${deep.ventes?.scoreVentes??'N/A'}/100\n- Devis expirés: ${deep.ventes?.nbDevisExpires??0} | Taux conversion: ${deep.ventes?.tauxConversionDevis??0}%\n- Clients sans limite crédit: ${deep.ventes?.nbClientsSansCredit??0} (${deep.ventes?.pctClientsSansCredit??0}%) | Factures échues +60j: ${deep.ventes?.nbFacturesEchues60j??0}\n- Concentration top3 clients: ${deep.ventes?.concentrationClients??0}% | DSO réel: ${deep.ventes?.dsoReel??'N/A'} jours\n=== STOCK === Score calculé: ${deep.stock?.scoreStock??'N/A'}/100\n- Articles sans prix vente: ${deep.stock?.nbArticlesSansPrixVente??0} (${deep.stock?.pctArticlesSansPrixVente??0}%) | Sans catégorie: ${deep.stock?.nbArticlesSansCategorie??0} (${deep.stock?.pctArticlesSansCategorie??0}%)\n- Sans UDM: ${deep.stock?.nbArticlesSansUDM??0} | Méthode coût mixte: ${deep.stock?.methodeMixte?'OUI '+deep.stock.methodes:'Non'}\n- Stock négatif: ${deep.stock?.nbArticlesNegatifs??0} articles valeur ${deep.stock?.valeurNegativeTotale??0}€\n=== SÉCURITÉ === Score calculé: ${deep.securite?.scoreSecurite??'N/A'}/100\n- Inactifs +90j: ${deep.securite?.nbInactifs90j??0} (${deep.securite?.pctInactifs??0}%) | Sans profil: ${deep.securite?.nbSansProfile??0}\n- Ratio SUPER: ${deep.securite?.ratioSuper??0}% | SOD critiques: ${deep.securite?.conflitsCritiques??0} | SOD attention: ${deep.securite?.conflitsAttention??0}\n- Détail SOD: ${(deep.securite?.conflitsSOD||[]).slice(0,5).map(c=>c.userName+':'+c.label).join(' | ')||'aucun'}\n\n=== ANALYSE COMPTES AUXILIAIRES (BALANCE GL vs AUXILIAIRE) ===
+- Écarts balance GL / Auxiliaires détectés: ${(aux.nbEcarts??0)} auxiliaire(s) en écart
+- Clients: GL=${aux.ecarts?.[0]?.balGL??'N/A'} vs Aux=${aux.ecarts?.[0]?.balAux??'N/A'} → Écart=${aux.ecarts?.[0]?.ecart??0}€
+- Fournisseurs: GL=${aux.ecarts?.[1]?.balGL??'N/A'} vs Aux=${aux.ecarts?.[1]?.balAux??'N/A'} → Écart=${aux.ecarts?.[1]?.ecart??0}€
+- Banque: GL=${aux.ecarts?.[2]?.balGL??'N/A'} vs Aux=${aux.ecarts?.[2]?.balAux??'N/A'} → Écart=${aux.ecarts?.[2]?.ecart??0}€
+- Immobilisations: GL=${aux.ecarts?.[3]?.balGL??'N/A'} vs Aux=${aux.ecarts?.[3]?.balAux??'N/A'} → Écart=${aux.ecarts?.[3]?.ecart??0}€
+- Stock: GL=${aux.ecarts?.[4]?.balGL??'N/A'} vs Aux=${aux.ecarts?.[4]?.balAux??'N/A'} → Écart=${aux.ecarts?.[4]?.ecart??0}€
+- Imputations directes sur comptes collectifs: ${aux.imputationsDirectes?.total??0} total (Clients:${aux.imputationsDirectes?.clients??0}, Fourn:${aux.imputationsDirectes?.fournisseurs??0}, Banque:${aux.imputationsDirectes?.banque??0}, Immo:${aux.imputationsDirectes?.immobilisations??0}, Stock:${aux.imputationsDirectes?.stock??0})
+- Comptes collectifs avec Direct Posting=Oui (anomalie): ${aux.directPosting?.nbCollectifsAnomalie??0}
+- Score auxiliaires: ${aux.scoreAux??'N/A'}/100
+RÈGLE: Tout écart balance GL/auxiliaire > 0.01€ = FINDING CRITIQUE obligatoire. Toute imputation directe sur compte collectif = FINDING CRITIQUE. Direct Posting=Oui sur compte collectif = FINDING ATTENTION.
+
+INSTRUCTION CRITIQUE: Utilise UNIQUEMENT ces chiffres réels dans tes findings. Score module = score calculé ±10pts max selon contexte. Génère minimum 4-5 findings détaillés et actionnables par module avec le chiffre exact cité.\n\nANALYSE SÉCURITÉ & SOD (Ségrégation des Tâches):
 ${JSON.stringify(secSummary,null,2)}
 
 RÈGLES SOD VÉRIFIÉES:
@@ -1651,6 +1891,49 @@ function renderReport(r,data){
       <span class="bench-ref">ref: ${m.benchmark_secteur??65}</span>
     </div>`).join('');
 
+  // Section auxiliaires comptables
+  const auxData = data?.auxAnalysis || lastReport?.auxAnalysis || {};
+  const auxHtml = auxData.ecarts?.length > 0 ? `
+    <div class="section-block" style="margin-bottom:1.25rem">
+      <div class="slabel" style="margin-bottom:10px">Analyse comptes auxiliaires — Cohérence GL / Auxiliaires</div>
+
+      <!-- Tableau balance GL vs Auxiliaire -->
+      <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:10px">
+        <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;font-size:11px;font-weight:600;color:var(--text3);padding:7px 12px;background:var(--bg2);border-bottom:0.5px solid var(--border)">
+          <span>Auxiliaire</span>
+          <span style="text-align:right">Balance GL</span>
+          <span style="text-align:right">Balance Aux.</span>
+          <span style="text-align:right">Écart</span>
+          <span style="text-align:right">Imputation directe</span>
+        </div>
+        ${auxData.ecarts.map(e => {
+          const hasEcart = Math.abs(e.ecart||0) > 0.01;
+          const hasImpDir = e.imputations > 0;
+          return `<div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;padding:8px 12px;border-bottom:0.5px solid var(--border);align-items:center;background:${hasEcart?'var(--red-bg)':hasImpDir?'var(--amber-bg)':''}">
+            <div style="font-size:12px;font-weight:500;color:var(--text)">${e.auxiliaire}</div>
+            <div style="font-size:12px;text-align:right;color:var(--text2)">${e.balGL!==undefined?(e.balGL).toLocaleString('fr-FR',{minimumFractionDigits:2})+'€':'N/A'}</div>
+            <div style="font-size:12px;text-align:right;color:var(--text2)">${e.balAux!==undefined?(e.balAux).toLocaleString('fr-FR',{minimumFractionDigits:2})+'€':'N/A'}</div>
+            <div style="font-size:12px;text-align:right;font-weight:600;color:${hasEcart?'var(--red)':'var(--green)'}">${hasEcart?(e.ecart>0?'+':'')+e.ecart.toLocaleString('fr-FR',{minimumFractionDigits:2})+'€':'✓ 0.00€'}</div>
+            <div style="text-align:right"><span class="tag ${hasImpDir?'tag-crit':'tag-ok'}">${hasImpDir?e.imputations+' détectée(s)':'Aucune'}</span></div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <!-- Résumé Direct Posting -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:${(auxData.directPosting?.nbCollectifsAnomalie||0)>0?'var(--red-bg)':'var(--green-bg)'};border-radius:var(--radius-sm);padding:10px 12px">
+          <div style="font-size:11px;color:${(auxData.directPosting?.nbCollectifsAnomalie||0)>0?'var(--red)':'var(--green)'};font-weight:600;margin-bottom:3px">Comptes collectifs Direct Posting = Oui</div>
+          <div style="font-size:20px;font-weight:700;color:${(auxData.directPosting?.nbCollectifsAnomalie||0)>0?'var(--red)':'var(--green)'}">${auxData.directPosting?.nbCollectifsAnomalie||0}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${(auxData.directPosting?.nbCollectifsAnomalie||0)>0?'Anomalie parametrage - risque ecart':'Parametrage correct'}</div>
+        </div>
+        <div style="background:${(auxData.nbEcarts||0)>0?'var(--red-bg)':'var(--green-bg)'};border-radius:var(--radius-sm);padding:10px 12px">
+          <div style="font-size:11px;color:${(auxData.nbEcarts||0)>0?'var(--red)':'var(--green)'};font-weight:600;margin-bottom:3px">Score cohérence GL / Auxiliaires</div>
+          <div style="font-size:20px;font-weight:700;color:${(auxData.nbEcarts||0)>0?'var(--red)':'var(--green)'}">${auxData.scoreAux??'—'}/100</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${(auxData.nbEcarts||0)>0?(auxData.nbEcarts)+' auxiliaire(s) en écart':'Toutes les balances sont équilibrées'}</div>
+        </div>
+      </div>
+    </div>` : '';
+
   // Section sécurité SOD enrichie
   const sod = data?.sodAnalysis || {};
   const sodHtml = sod.totalUsers > 0 ? `
@@ -1744,6 +2027,7 @@ function renderReport(r,data){
 
         <div class="section-block">
           <div class="slabel">Analyse détaillée par module</div>
+          ${auxHtml}
           ${sodHtml}
           ${findingsHtml}
         </div>
