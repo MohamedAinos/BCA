@@ -2,8 +2,9 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f172a'/%3E%3Ccircle cx='13' cy='13' r='7' fill='none' stroke='%23378ADD' stroke-width='2.5'/%3E%3Ccircle cx='13' cy='13' r='1.5' fill='%23378ADD'/%3E%3Cline x1='18.5' y1='18.5' x2='24' y2='24' stroke='%23378ADD' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BC Assessment — Business Central</title>
+  <title>ERPScope — Business Central Assessment</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
@@ -153,7 +154,7 @@
 <div id="waitingScreen" style="display:none;min-height:100vh;display:none;align-items:center;justify-content:center;padding:1rem;background:var(--bg3)">
   <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:16px;padding:2.5rem;max-width:420px;width:100%;text-align:center">
     <div style="width:64px;height:64px;background:var(--amber-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:28px">⏳</div>
-    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Accès en attente</div>
+    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">ERP<span style="color:#378ADD">Scope</span> — Accès en attente</div>
     <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:1.5rem">
       Votre compte <strong id="waitingEmail"></strong> a bien été créé.<br>
       L'administrateur va activer votre accès sous peu.
@@ -169,9 +170,16 @@
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-box">
     <div class="auth-logo">
-      <div class="auth-logo-icon"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg></div>
+      <div class="auth-logo-icon" style="background:linear-gradient(135deg,#0f172a,#1e3a5f)">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
+          <circle cx="10" cy="10" r="7" stroke="#378ADD" stroke-width="2"/>
+          <circle cx="10" cy="10" r="3.5" stroke="#378ADD" stroke-width="1.2" opacity=".5"/>
+          <circle cx="10" cy="10" r="1" fill="#378ADD"/>
+          <line x1="15.5" y1="15.5" x2="20" y2="20" stroke="#378ADD" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </div>
     </div>
-    <div class="auth-title">BC Assessment</div>
+    <div class="auth-title">ERP<span style="color:#378ADD">Scope</span></div>
     <div class="auth-sub">Votre outil d'audit ERP Business Central</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Se connecter</button>
@@ -195,8 +203,18 @@
 
 <div class="page" id="mainApp" style="display:none">
   <div class="logo">
-    <div class="logo-icon"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg></div>
-    <div><div class="logo-text">BC Assessment</div><div class="logo-sub">Business Central · Powered by AI · PME Edition</div></div>
+    <div class="logo-icon" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:11px;width:40px;height:40px">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+        <circle cx="10" cy="10" r="7" stroke="#378ADD" stroke-width="2"/>
+        <circle cx="10" cy="10" r="3.5" stroke="#378ADD" stroke-width="1.2" opacity=".5"/>
+        <circle cx="10" cy="10" r="1" fill="#378ADD"/>
+        <line x1="15.5" y1="15.5" x2="20" y2="20" stroke="#378ADD" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div style="font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px">ERP<span style="color:#378ADD">Scope</span></div>
+      <div class="logo-sub">Business Central Assessment · Powered by AI</div>
+    </div>
   </div>
 
   <!-- Barre utilisateur -->
@@ -426,7 +444,7 @@
       <div class="field" style="margin-bottom:10px"><label>Client ID Azure AD (Mail.Send)</label><input type="text" id="graphClientId" placeholder="App registration ID"/></div>
       <div class="field" style="margin-bottom:10px"><label>Expéditeur</label><input type="text" id="senderEmail" placeholder="assessment@societe.com"/></div>
       <div class="field" style="margin-bottom:10px"><label>Destinataires</label><input type="text" id="recipientEmails" placeholder="cfo@societe.com, dsi@societe.com"/></div>
-      <div class="field" style="margin-bottom:12px"><label>Objet</label><input type="text" id="emailSubject" value="Rapport d'assessment ERP Business Central"/></div>
+      <div class="field" style="margin-bottom:12px"><label>Objet</label><input type="text" id="emailSubject" value="Rapport ERPScope — Assessment Business Central"/></div>
       <button class="btn-sm" id="sendEmailBtn" onclick="sendEmail()" disabled>Envoyer le rapport</button>
       <div id="emailStatus" style="margin-top:8px"></div>
     </div>
@@ -2029,7 +2047,7 @@ async function sendEmail(){
     const td=await r.json();if(td.error)throw new Error(td.error);
     const toList=recipients.split(',').map(e=>({emailAddress:{address:e.trim()}}));
     const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-    const body=`<html><body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto"><div style="background:#185FA5;padding:20px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:18px">Rapport Assessment ERP BC</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px">${now}</p></div><div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px"><div style="background:#EFF6FF;border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:28px;font-weight:700;color:#185FA5">${lastReport.score_global}<span style="font-size:13px;color:#6B7280">/100</span></div><div style="font-weight:600">${lastReport.societe}</div></div><p style="line-height:1.7;font-size:13px">${lastReport.synthese}</p>${(lastReport.modules||[]).map(m=>`<div style="margin-top:14px"><h3 style="font-size:13px;font-weight:600;margin:0 0 7px">${m.nom} — ${m.score}/100</h3>${(m.findings||[]).map(f=>`<div style="font-size:12px;color:#4B5563;padding:3px 0 3px 10px;border-left:3px solid ${f.gravite==='critique'?'#EF4444':f.gravite==='attention'?'#F59E0B':'#3B82F6'};margin-bottom:3px">${f.texte}</div>`).join('')}</div>`).join('')}</div></body></html>`;
+    const body=`<html><body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto"><div style="background:#185FA5;padding:20px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:18px">ERP<span style="color:#60a5fa">Scope</span> — Rapport d'assessment</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px">${now}</p></div><div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px"><div style="background:#EFF6FF;border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:28px;font-weight:700;color:#185FA5">${lastReport.score_global}<span style="font-size:13px;color:#6B7280">/100</span></div><div style="font-weight:600">${lastReport.societe}</div></div><p style="line-height:1.7;font-size:13px">${lastReport.synthese}</p>${(lastReport.modules||[]).map(m=>`<div style="margin-top:14px"><h3 style="font-size:13px;font-weight:600;margin:0 0 7px">${m.nom} — ${m.score}/100</h3>${(m.findings||[]).map(f=>`<div style="font-size:12px;color:#4B5563;padding:3px 0 3px 10px;border-left:3px solid ${f.gravite==='critique'?'#EF4444':f.gravite==='attention'?'#F59E0B':'#3B82F6'};margin-bottom:3px">${f.texte}</div>`).join('')}</div>`).join('')}</div></body></html>`;
     const mr=await fetch(`https://graph.microsoft.com/v1.0/users/${sender}/sendMail`,{method:'POST',headers:{Authorization:`Bearer ${td.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({message:{subject,body:{contentType:'HTML',content:body},toRecipients:toList},saveToSentItems:true})});
     if(!mr.ok){const e=await mr.json();throw new Error(e.error?.message||'Graph API '+mr.status)}
     statusEl.innerHTML=`<div style="background:var(--green-bg);border:0.5px solid #C0DD97;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--green)">Email envoyé à ${toList.length} destinataire(s) !</div>`;
@@ -2042,7 +2060,13 @@ function exportPDF(){
     const{jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'}),W=210,M=18,CW=W-M*2;let y=0;
     const chk=n=>{if(y+n>275){doc.addPage();y=18}};
     doc.setFillColor(25,95,165);doc.rect(0,0,W,38,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('Rapport Assessment ERP BC',M,16);
+    doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');
+    doc.text('ERP',M,16);
+    // Scope en bleu clair
+    const erpW = doc.getTextWidth('ERP');
+    doc.setTextColor(96,165,250);
+    doc.text('Scope',M+erpW,16);
+    doc.setTextColor(255,255,255);
     doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(`${lastReport.societe} — ${lastReport.secteur||''}`,M,23);
     doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})}`,M,30);
     doc.setFillColor(14,71,124);doc.rect(W-50,8,34,22,'F');
@@ -2073,7 +2097,7 @@ function exportPDF(){
     }
     doc.setFillColor(245,247,250);doc.rect(0,285,W,12,'F');
     doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(140,140,140);
-    doc.text(`Assessment ERP BC — ${lastReport.societe} — Confidentiel`,W/2,292,{align:'center'});
+    doc.text(`ERPScope — ${lastReport.societe} — Confidentiel`,W/2,292,{align:'center'});
     doc.save(`Assessment_BC_${lastReport.societe.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
   }catch(e){console.error(e)}
 }
