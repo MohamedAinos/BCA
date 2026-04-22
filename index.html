@@ -2,9 +2,9 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f172a'/%3E%3Ccircle cx='13' cy='13' r='7' fill='none' stroke='%23378ADD' stroke-width='2.5'/%3E%3Ccircle cx='13' cy='13' r='1.5' fill='%23378ADD'/%3E%3Cline x1='18.5' y1='18.5' x2='24' y2='24' stroke='%23378ADD' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E"/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='40' fill='%230d1b2a'/%3E%3Cpolygon points='100,18 182,59 182,141 100,182 18,141 18,59' fill='none' stroke='%234a7fa5' stroke-width='8'/%3E%3Ccircle cx='100' cy='100' r='30' fill='%231ec8b0' opacity='.15'/%3E%3Ccircle cx='100' cy='100' r='13' fill='%232de8cc'/%3E%3Ccircle cx='100' cy='100' r='6' fill='%23fff' opacity='.4'/%3E%3Cline x1='100' y1='100' x2='100' y2='30' stroke='%234a9fb5' stroke-width='4' opacity='.6'/%3E%3Cline x1='100' y1='100' x2='155' y2='65' stroke='%234a9fb5' stroke-width='4' opacity='.6'/%3E%3Cline x1='100' y1='100' x2='155' y2='135' stroke='%234a9fb5' stroke-width='4' opacity='.5'/%3E%3Cline x1='100' y1='100' x2='100' y2='170' stroke='%234a9fb5' stroke-width='4' opacity='.5'/%3E%3Cline x1='100' y1='100' x2='45' y2='135' stroke='%234a9fb5' stroke-width='4' opacity='.5'/%3E%3Cline x1='100' y1='100' x2='45' y2='65' stroke='%234a9fb5' stroke-width='4' opacity='.6'/%3E%3C/svg%3E"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ERPScope — Business Central Assessment</title>
+  <title>ERPLensIQ — Business Central Assessment</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
@@ -154,7 +154,7 @@
 <div id="waitingScreen" style="display:none;min-height:100vh;display:none;align-items:center;justify-content:center;padding:1rem;background:var(--bg3)">
   <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:16px;padding:2.5rem;max-width:420px;width:100%;text-align:center">
     <div style="width:64px;height:64px;background:var(--amber-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:28px">⏳</div>
-    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">ERP<span style="color:#378ADD">Scope</span> — Accès en attente</div>
+    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px"><span style="color:#5b8db8">ERP</span><span style="color:#4a9fb5;font-weight:300">Lens</span><span style="color:#1ec8b0;font-weight:700">IQ</span> — Accès en attente</div>
     <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:1.5rem">
       Votre compte <strong id="waitingEmail"></strong> a bien été créé.<br>
       L'administrateur va activer votre accès sous peu.
@@ -170,16 +170,37 @@
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-box">
     <div class="auth-logo">
-      <div class="auth-logo-icon" style="background:linear-gradient(135deg,#0f172a,#1e3a5f)">
-        <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
-          <circle cx="10" cy="10" r="7" stroke="#378ADD" stroke-width="2"/>
-          <circle cx="10" cy="10" r="3.5" stroke="#378ADD" stroke-width="1.2" opacity=".5"/>
-          <circle cx="10" cy="10" r="1" fill="#378ADD"/>
-          <line x1="15.5" y1="15.5" x2="20" y2="20" stroke="#378ADD" stroke-width="2.2" stroke-linecap="round"/>
+      <div style="width:72px;height:72px;display:flex;align-items:center;justify-content:center">
+        <svg width="72" height="72" viewBox="0 0 200 200" fill="none">
+          <defs>
+            <linearGradient id="authHex" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4a7fa5"/><stop offset="100%" stop-color="#1ec8b0"/>
+            </linearGradient>
+            <radialGradient id="authGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#2de8cc" stop-opacity=".5"/>
+              <stop offset="100%" stop-color="#1ec8b0" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <polygon points="100,18 182,59 182,141 100,182 18,141 18,59" fill="none" stroke="url(#authHex)" stroke-width="7"/>
+          <circle cx="100" cy="100" r="40" fill="url(#authGlow)"/>
+          <circle cx="100" cy="100" r="14" fill="#2de8cc"/>
+          <circle cx="100" cy="100" r="7" fill="#fff" opacity=".45"/>
+          <line x1="100" y1="100" x2="100" y2="36" stroke="url(#authHex)" stroke-width="4" opacity=".6"/>
+          <line x1="100" y1="100" x2="155" y2="68" stroke="url(#authHex)" stroke-width="4" opacity=".6"/>
+          <line x1="100" y1="100" x2="155" y2="132" stroke="url(#authHex)" stroke-width="4" opacity=".5"/>
+          <line x1="100" y1="100" x2="100" y2="164" stroke="url(#authHex)" stroke-width="4" opacity=".5"/>
+          <line x1="100" y1="100" x2="45" y2="132" stroke="url(#authHex)" stroke-width="4" opacity=".5"/>
+          <line x1="100" y1="100" x2="45" y2="68" stroke="url(#authHex)" stroke-width="4" opacity=".6"/>
+          <circle cx="100" cy="36" r="7" fill="#4a9fb5"/>
+          <circle cx="155" cy="68" r="6" fill="#4a9fb5"/>
+          <circle cx="155" cy="132" r="6" fill="#3a8fa5"/>
+          <circle cx="100" cy="164" r="7" fill="#4a9fb5"/>
+          <circle cx="45" cy="132" r="6" fill="#3a8fa5"/>
+          <circle cx="45" cy="68" r="6" fill="#4a9fb5"/>
         </svg>
       </div>
     </div>
-    <div class="auth-title">ERP<span style="color:#378ADD">Scope</span></div>
+    <div class="auth-title" style="font-size:26px"><span style="color:#5b8db8">ERP</span><span style="color:#4a9fb5;font-weight:300">Lens</span><span style="color:#1ec8b0;font-weight:700">IQ</span></div>
     <div class="auth-sub">Votre outil d'audit ERP Business Central</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Se connecter</button>
@@ -203,17 +224,40 @@
 
 <div class="page" id="mainApp" style="display:none">
   <div class="logo">
-    <div class="logo-icon" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:11px;width:40px;height:40px">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-        <circle cx="10" cy="10" r="7" stroke="#378ADD" stroke-width="2"/>
-        <circle cx="10" cy="10" r="3.5" stroke="#378ADD" stroke-width="1.2" opacity=".5"/>
-        <circle cx="10" cy="10" r="1" fill="#378ADD"/>
-        <line x1="15.5" y1="15.5" x2="20" y2="20" stroke="#378ADD" stroke-width="2.2" stroke-linecap="round"/>
-      </svg>
-    </div>
+    <div style="flex-shrink:0"><svg width="38" height="38" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="navHex" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a7fa5"/><stop offset="100%" stop-color="#1ec8b0"/>
+    </linearGradient>
+    <radialGradient id="navGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2de8cc" stop-opacity=".5"/>
+      <stop offset="100%" stop-color="#1ec8b0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <polygon points="100,18 182,59 182,141 100,182 18,141 18,59" fill="none" stroke="url(#navHex)" stroke-width="7"/>
+  <circle cx="100" cy="100" r="36" fill="url(#navGlow)"/>
+  <circle cx="100" cy="100" r="13" fill="#2de8cc"/>
+  <circle cx="100" cy="100" r="6" fill="#fff" opacity=".45"/>
+  <line x1="100" y1="100" x2="100" y2="36" stroke="url(#navHex)" stroke-width="4" opacity=".6"/>
+  <line x1="100" y1="100" x2="155" y2="68" stroke="url(#navHex)" stroke-width="4" opacity=".6"/>
+  <line x1="100" y1="100" x2="155" y2="132" stroke="url(#navHex)" stroke-width="4" opacity=".5"/>
+  <line x1="100" y1="100" x2="100" y2="164" stroke="url(#navHex)" stroke-width="4" opacity=".5"/>
+  <line x1="100" y1="100" x2="45" y2="132" stroke="url(#navHex)" stroke-width="4" opacity=".5"/>
+  <line x1="100" y1="100" x2="45" y2="68" stroke="url(#navHex)" stroke-width="4" opacity=".6"/>
+  <circle cx="100" cy="36" r="6" fill="#4a9fb5"/>
+  <circle cx="155" cy="68" r="5" fill="#4a9fb5"/>
+  <circle cx="155" cy="132" r="5" fill="#3a8fa5"/>
+  <circle cx="100" cy="164" r="6" fill="#4a9fb5"/>
+  <circle cx="45" cy="132" r="5" fill="#3a8fa5"/>
+  <circle cx="45" cy="68" r="5" fill="#4a9fb5"/>
+</svg></div>
     <div>
-      <div style="font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px">ERP<span style="color:#378ADD">Scope</span></div>
-      <div class="logo-sub">Business Central Assessment · Powered by AI</div>
+      <div style="font-size:19px;font-weight:700;letter-spacing:-.3px;line-height:1.2">
+        <span style="color:#5b8db8">ERP</span><span style="color:#4a9fb5;font-weight:300">Lens</span><span style="color:#1ec8b0;font-weight:700">IQ</span>
+      </div>
+      <div class="logo-sub">Business Central · Powered by AI</div>
+    </div>
+  </div>
     </div>
   </div>
 
@@ -275,7 +319,7 @@
         <div class="field" style="margin-bottom:10px"><label>Nom de l'environnement <span style="color:var(--text3)">(ex: CXD_FRANCE_TEST)</span></label><input type="text" id="envName" placeholder="production" value="production" oninput="resetConn()"/></div>
         <div style="display:flex;gap:8px;align-items:center">
           <button class="btn-sm" id="btnTestConn" onclick="testConnection()">Tester la connexion →</button>
-          <button class="btn-sm" id="nextStep1" onclick="goStep(2)" disabled style="background:var(--blue);color:#fff;border-color:var(--blue)">Suivant →</button>
+          <button class="btn-sm" id="nextStep1" onclick="goStep(2)" disabled style="background:#1ec8b0;color:#0d1b2a;border-color:#1ec8b0">Suivant →</button>
         </div>
         <div id="conn-status" class="conn-ind conn-pending"><span class="dot-s dot-pending"></span><span>Entrez vos identifiants</span></div>
         <select id="company-select" style="margin-top:8px;display:none"><option value="">Choisir une société...</option></select>
@@ -364,7 +408,7 @@
 
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn-sm" onclick="goStep(1)">← Retour</button>
-          <button class="btn-sm" onclick="goStep(3)" style="background:var(--blue);color:#fff;border-color:var(--blue)">Suivant →</button>
+          <button class="btn-sm" onclick="goStep(3)" style="background:#1ec8b0;color:#0d1b2a;border-color:#1ec8b0">Suivant →</button>
         </div>
       </div>
 
@@ -381,7 +425,7 @@
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn-sm" onclick="goStep(2)">← Retour</button>
-          <button class="btn-sm" onclick="goStep(4)" style="background:var(--blue);color:#fff;border-color:var(--blue)">Lancer l'analyse →</button>
+          <button class="btn-sm" onclick="goStep(4)" style="background:#1ec8b0;color:#0d1b2a;border-color:#1ec8b0">Lancer l'analyse →</button>
         </div>
       </div>
 
@@ -2255,7 +2299,7 @@ function renderAdmin() {
           <div class="slabel">Inviter un utilisateur par email</div>
           <div style="display:flex;gap:8px">
             <input type="email" id="inviteEmail" placeholder="client@societe.com" style="flex:1"/>
-            <button class="btn-sm" onclick="grantAccessByEmail()" style="background:var(--blue);color:#fff;border-color:var(--blue)">Activer l'accès</button>
+            <button class="btn-sm" onclick="grantAccessByEmail()" style="background:#1ec8b0;color:#0d1b2a;border-color:#1ec8b0">Activer l'accès</button>
           </div>
           <div id="inviteMsg" style="margin-top:8px;font-size:12px"></div>
         </div>
@@ -2331,7 +2375,7 @@ async function sendEmail(){
     const td=await r.json();if(td.error)throw new Error(td.error);
     const toList=recipients.split(',').map(e=>({emailAddress:{address:e.trim()}}));
     const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-    const body=`<html><body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto"><div style="background:#185FA5;padding:20px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:18px">ERP<span style="color:#60a5fa">Scope</span> — Rapport d'assessment</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px">${now}</p></div><div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px"><div style="background:#EFF6FF;border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:28px;font-weight:700;color:#185FA5">${lastReport.score_global}<span style="font-size:13px;color:#6B7280">/100</span></div><div style="font-weight:600">${lastReport.societe}</div></div><p style="line-height:1.7;font-size:13px">${lastReport.synthese}</p>${(lastReport.modules||[]).map(m=>`<div style="margin-top:14px"><h3 style="font-size:13px;font-weight:600;margin:0 0 7px">${m.nom} — ${m.score}/100</h3>${(m.findings||[]).map(f=>`<div style="font-size:12px;color:#4B5563;padding:3px 0 3px 10px;border-left:3px solid ${f.gravite==='critique'?'#EF4444':f.gravite==='attention'?'#F59E0B':'#3B82F6'};margin-bottom:3px">${f.texte}</div>`).join('')}</div>`).join('')}</div></body></html>`;
+    const body=`<html><body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto"><div style="background:#185FA5;padding:20px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:18px"><span style="color:#5b8db8">ERP</span><span style="color:#4a9fb5;font-weight:300">Lens</span><span style="color:#1ec8b0">IQ</span> — Rapport d'assessment</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px">${now}</p></div><div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px"><div style="background:#EFF6FF;border-radius:8px;padding:14px;margin-bottom:14px"><div style="font-size:28px;font-weight:700;color:#185FA5">${lastReport.score_global}<span style="font-size:13px;color:#6B7280">/100</span></div><div style="font-weight:600">${lastReport.societe}</div></div><p style="line-height:1.7;font-size:13px">${lastReport.synthese}</p>${(lastReport.modules||[]).map(m=>`<div style="margin-top:14px"><h3 style="font-size:13px;font-weight:600;margin:0 0 7px">${m.nom} — ${m.score}/100</h3>${(m.findings||[]).map(f=>`<div style="font-size:12px;color:#4B5563;padding:3px 0 3px 10px;border-left:3px solid ${f.gravite==='critique'?'#EF4444':f.gravite==='attention'?'#F59E0B':'#3B82F6'};margin-bottom:3px">${f.texte}</div>`).join('')}</div>`).join('')}</div></body></html>`;
     const mr=await fetch(`https://graph.microsoft.com/v1.0/users/${sender}/sendMail`,{method:'POST',headers:{Authorization:`Bearer ${td.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({message:{subject,body:{contentType:'HTML',content:body},toRecipients:toList},saveToSentItems:true})});
     if(!mr.ok){const e=await mr.json();throw new Error(e.error?.message||'Graph API '+mr.status)}
     statusEl.innerHTML=`<div style="background:var(--green-bg);border:0.5px solid #C0DD97;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--green)">Email envoyé à ${toList.length} destinataire(s) !</div>`;
