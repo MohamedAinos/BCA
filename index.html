@@ -907,18 +907,38 @@ function computeAuxiliairesAnalysis(data) {
 
   // ── CALCUL BALANCES AUXILIAIRES ────────────────────
   // Balance auxiliaire clients
-  const balAuxClients = round2(
-    custLedger.reduce((s,e) => s + (parseFloat(e.remainingAmount)||parseFloat(e.amount)||0), 0)
+  // Priorité 1 : somme des remainingAmountLCY/remainingAmount des entrées ouvertes
+  // Priorité 2 : somme des balanceLCY/balance directement sur l'entité customer
+  const balAuxClientsFromLedger = round2(
+    custLedger.reduce((s,e) => {
+      const v = parseFloat(e.remainingAmountLCY) || parseFloat(e.remainingAmount) || parseFloat(e.amountLCY) || parseFloat(e.amount) || 0;
+      return s + v;
+    }, 0)
   );
+  const balAuxClientsFromCustomers = round2(
+    customers.reduce((s,c) => s + (parseFloat(c.balanceLCY)||parseFloat(c.balance)||0), 0)
+  );
+  // Utiliser ledger si non nul, sinon fallback sur customers
+  const balAuxClients = balAuxClientsFromLedger !== 0 ? balAuxClientsFromLedger : balAuxClientsFromCustomers;
 
   // Balance auxiliaire fournisseurs
-  const balAuxFourn = round2(
-    vendLedger.reduce((s,e) => s + (parseFloat(e.remainingAmount)||parseFloat(e.amount)||0), 0)
+  const balAuxFournFromLedger = round2(
+    vendLedger.reduce((s,e) => {
+      const v = parseFloat(e.remainingAmountLCY) || parseFloat(e.remainingAmount) || parseFloat(e.amountLCY) || parseFloat(e.amount) || 0;
+      return s + v;
+    }, 0)
   );
+  const balAuxFournFromVendors = round2(
+    vendors.reduce((s,v) => s + (parseFloat(v.balanceLCY)||parseFloat(v.balance)||0), 0)
+  );
+  const balAuxFourn = balAuxFournFromLedger !== 0 ? balAuxFournFromLedger : balAuxFournFromVendors;
 
-  // Balance auxiliaire banque
+  // Balance auxiliaire banque — utiliser balance ou totalBalance directement
   const balAuxBanque = round2(
-    bankAccounts.reduce((s,b) => s + (parseFloat(b.balance)||parseFloat(b.currentBalance)||0), 0)
+    bankAccounts.reduce((s,b) => s + (
+      parseFloat(b.balance) || parseFloat(b.balanceLCY) ||
+      parseFloat(b.currentBalance) || parseFloat(b.totalBalance) || 0
+    ), 0)
   );
 
   // Balance auxiliaire immobilisations (valeur nette)
@@ -1665,8 +1685,8 @@ async function fetchBCData(cid){
   const baseAdmin=`https://api.businesscentral.dynamics.com/v2.0/${tid}/${env}`;
   const eps=[
     ['/api/v2.0/companies('+cid+')/accounts?$top=200','accounts'],
-    ['/api/v2.0/companies('+cid+')/customers?$top=100','customers'],
-    ['/api/v2.0/companies('+cid+')/vendors?$top=100','vendors'],
+    ['/api/v2.0/companies('+cid+')/customers?$top=200&$select=id,number,displayName,balanceLCY,balance,creditLimitLCY,paymentTermsId,blocked','customers'],
+    ['/api/v2.0/companies('+cid+')/vendors?$top=200&$select=id,number,displayName,balanceLCY,balance,paymentTermsId,blocked','vendors'],
     ['/api/v2.0/companies('+cid+')/generalLedgerEntries?$top=200&$orderby=postingDate desc','glEntries'],
     ['/api/v2.0/companies('+cid+')/salesOrders?$top=100','salesOrders'],
     ['/api/v2.0/companies('+cid+')/purchaseOrders?$top=100','purchaseOrders'],
@@ -1698,9 +1718,9 @@ async function fetchBCData(cid){
     ['/api/v2.0/companies('+cid+')/accountingPeriods?$top=50','accountingPeriods'],
     ['/api/v2.0/companies('+cid+')/paymentTerms?$top=50','paymentTerms'],
     // Auxiliaires comptables
-    ['/api/v2.0/companies('+cid+')/customerLedgerEntries?$top=500&$orderby=postingDate desc','customerLedgerEntries'],
-    ['/api/v2.0/companies('+cid+')/vendorLedgerEntries?$top=500&$orderby=postingDate desc','vendorLedgerEntries'],
-    ['/api/v2.0/companies('+cid+')/bankAccounts?$top=50','bankAccounts'],
+    ['/api/v2.0/companies('+cid+')/customerLedgerEntries?$top=500&$filter=open eq true&$select=customerNumber,amount,remainingAmount,open,postingDate,dueDate,documentType&$orderby=postingDate desc','customerLedgerEntries'],
+    ['/api/v2.0/companies('+cid+')/vendorLedgerEntries?$top=500&$filter=open eq true&$select=vendorNumber,amount,remainingAmount,open,postingDate,dueDate,documentType&$orderby=postingDate desc','vendorLedgerEntries'],
+    ['/api/v2.0/companies('+cid+')/bankAccounts?$top=50&$select=id,number,name,balance,balanceLCY,currencyCode','bankAccounts'],
     ['/api/v2.0/companies('+cid+')/bankAccountLedgerEntries?$top=300&$orderby=postingDate desc','bankLedgerEntries'],
     ['/api/v2.0/companies('+cid+')/fixedAssetLedgerEntries?$top=300&$orderby=postingDate desc','fixedAssetLedgerEntries'],
     // Achats enrichis
